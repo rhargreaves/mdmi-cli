@@ -25,6 +25,36 @@ class TestCLI:
         assert result.exit_code == 0
         assert "Load a preset file to MDMI" in result.output
 
+    @patch("mido.get_output_names")
+    def test_list_ports_without_preset_file(self, mock_get_ports):
+        """Test --list-ports works without requiring preset file."""
+        mock_get_ports.return_value = ["Test Port 1", "Test Port 2"]
+
+        runner = CliRunner()
+        result = runner.invoke(main, ["load-preset", "--list-ports"])
+
+        assert result.exit_code == 0
+        assert "Available MIDI ports:" in result.output
+        assert "Test Port 1" in result.output
+        assert "Test Port 2" in result.output
+        mock_get_ports.assert_called_once()
+
+    def test_load_preset_without_arguments_shows_error(self):
+        """Test that load-preset without arguments shows proper error."""
+        runner = CliRunner()
+        result = runner.invoke(main, ["load-preset"])
+
+        assert result.exit_code != 0
+        assert "PRESET_FILE is required" in result.output
+
+    def test_load_preset_without_channel_shows_error(self):
+        """Test that load-preset without channel shows proper error."""
+        runner = CliRunner()
+        result = runner.invoke(main, ["load-preset", "test.tfi"])
+
+        assert result.exit_code != 0
+        assert "--channel is required" in result.output
+
     @patch("mdmi.cli.Path.exists")
     def test_load_preset_file_not_found(self, mock_exists):
         """Test load-preset with non-existent file."""

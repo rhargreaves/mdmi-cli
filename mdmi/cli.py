@@ -47,13 +47,9 @@ def main():
 
 
 @main.command("load-preset")
-@click.argument("preset_file", type=click.Path())
+@click.argument("preset_file", type=click.Path(), required=False)
 @click.option(
-    "--channel",
-    "-c",
-    type=click.IntRange(0, 5),
-    required=True,
-    help="Target FM channel (0-5)",
+    "--channel", "-c", type=click.IntRange(0, 5), help="Target FM channel (0-5)"
 )
 @click.option(
     "--port", "-p", type=str, help="MIDI port name (use --list-ports to see available)"
@@ -61,7 +57,11 @@ def main():
 @click.option("--fake", is_flag=True, help="Use fake MIDI interface for testing")
 @click.option("--list-ports", is_flag=True, help="List available MIDI ports and exit")
 def load_preset(
-    preset_file: str, channel: int, port: Optional[str], fake: bool, list_ports: bool
+    preset_file: Optional[str],
+    channel: Optional[int],
+    port: Optional[str],
+    fake: bool,
+    list_ports: bool,
 ):
     """Load a preset file to MDMI.
 
@@ -75,6 +75,16 @@ def load_preset(
         for port_name in mido.get_output_names():
             click.echo(f"  {port_name}")
         return
+
+    # If not listing ports, preset_file and channel are required
+    if not preset_file:
+        err_msg = "Error: PRESET_FILE is required when not using --list-ports"
+        click.echo(err_msg)
+        raise click.Abort()
+
+    if channel is None:
+        click.echo("Error: --channel is required when loading a preset")
+        raise click.Abort()
 
     # Validate file
     preset_path = Path(preset_file)
