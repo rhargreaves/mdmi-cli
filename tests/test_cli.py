@@ -336,3 +336,84 @@ class TestCLI:
 
         # Verify the message was also stored
         assert fake_interface.get_last_sysex() == test_sysex
+
+    def test_ping_help(self):
+        """Test ping command help."""
+        runner = CliRunner()
+        result = runner.invoke(main, ["ping", "--help"])
+
+        assert result.exit_code == 0
+        assert "Send a ping to MDMI and measure round-trip latency" in result.output
+        assert "--timeout" in result.output
+        assert "MDMI_MIDI_PORT" in result.output
+
+    @patch("mdmi.commands.common.FakeMIDIInterface")
+    def test_ping_fake_interface_success(self, mock_fake_midi):
+        """Test ping command with successful fake interface response."""
+        mock_interface = Mock()
+        mock_interface.port_name = "Fake MIDI Interface"
+        mock_interface.wait_for_sysex.return_value = bytes([0xF0, 0x00, 0x22, 0x77, 0x02, 0xF7])
+        mock_fake_midi.return_value = mock_interface
+
+        runner = CliRunner()
+        result = runner.invoke(main, ["ping", "--fake"])
+
+        assert result.exit_code == 0
+        assert "Sending ping to Fake MIDI Interface" in result.output
+        assert "✅ Pong received!" in result.output
+        assert "Round-trip latency:" in result.output
+        assert "ms" in result.output
+
+        # Verify ping SysEx was sent
+        mock_interface.send_sysex.assert_called_once()
+        sent_ping = mock_interface.send_sysex.call_args[0][0]
+        expected_ping = bytes([0xF0, 0x00, 0x22, 0x77, 0x01, 0xF7])
+        assert sent_ping == expected_ping
+
+    @patch("mdmi.commands.common.FakeMIDIInterface")
+    def test_ping_fake_interface_timeout(self, mock_fake_midi):
+        """Test ping command with timeout (no pong response)."""
+        mock_interface = Mock()
+        mock_interface.port_name = "Fake MIDI Interface"
+        mock_interface.wait_for_sysex.return_value = None  # Timeout
+        mock_fake_midi.return_value = mock_interface
+
+        runner = CliRunner()
+        result = runner.invoke(main, ["ping", "--fake", "--timeout", "0.1"])
+
+        assert result.exit_code != 0
+        assert "❌ No pong response received" in result.output
+        assert "MDMI is not connected" in result.output
+
+    @patch("mdmi.commands.common.FakeMIDIInterface")
+    def test_ping_fake_interface_wrong_response(self, mock_fake_midi):
+        """Test ping command with unexpected response."""
+        mock_interface = Mock()
+        mock_interface.port_name = "Fake MIDI Interface"
+        # Return unexpected response
+        mock_interface.wait_for_sysex.return_value = bytes([0xF0, 0x00, 0x22, 0x77, 0x99, 0xF7])
+        mock_fake_midi.return_value = mock_interface
+
+        runner = CliRunner()
+        result = runner.invoke(main, ["ping", "--fake"])
+
+        assert result.exit_code != 0
+        assert "❌ Unexpected response:" in result.output
+        assert "F0 00 22 77 99 F7" in result.output
+        assert "Expected pong: F0 00 22 77 02 F7" in result.output
+
+    @patch("mdmi.commands.common.FakeMIDIInterface")
+    def test_ping_with_custom_timeout(self, mock_fake_midi):
+        """Test ping command with custom timeout value."""
+        mock_interface = Mock()
+        mock_interface.port_name = "Fake MIDI Interface"
+        mock_interface.wait_for_sysex.return_value = bytes([0xF0, 0x00, 0x22, 0x77, 0x02, 0xF7])
+        mock_fake_midi.return_value = mock_interface
+
+        runner = CliRunner()
+        result = runner.invoke(main, ["ping", "--fake", "--timeout", "2.5"])
+
+        assert result.exit_code == 0
+        assert "timeout: 2.5s" in result.output
+        # Verify the timeout was passed to wait_for_sysex
+        mock_interface.wait_for_sysex.assert_called_once_with(2.5)

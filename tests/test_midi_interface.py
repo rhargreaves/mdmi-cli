@@ -9,34 +9,41 @@ from mdmi.midi_interface import MIDIInterface, FakeMIDIInterface
 class TestMIDIInterface:
     """Tests for MIDI interface."""
 
+    @patch("mido.get_input_names")
     @patch("mido.get_output_names")
     @patch("mido.open_output")
-    def test_real_midi_interface_init(self, mock_open, mock_names):
+    def test_real_midi_interface_init(self, mock_open_output, mock_output_names, mock_input_names):
         """Test real MIDI interface initialization."""
-        mock_names.return_value = ["Test Port"]
+        mock_output_names.return_value = ["Test Port"]
+        mock_input_names.return_value = []  # No input ports available
         mock_port = Mock()
-        mock_open.return_value = mock_port
+        mock_open_output.return_value = mock_port
 
         interface = MIDIInterface("Test Port")
 
         assert interface.port_name == "Test Port"
-        mock_open.assert_called_once_with("Test Port")
+        assert interface.input_port is None  # No input port available
+        mock_open_output.assert_called_once_with("Test Port")
 
+    @patch("mido.get_input_names")
     @patch("mido.get_output_names")
-    def test_real_midi_interface_invalid_port(self, mock_names):
+    def test_real_midi_interface_invalid_port(self, mock_output_names, mock_input_names):
         """Test real MIDI interface with invalid port."""
-        mock_names.return_value = ["Other Port"]
+        mock_output_names.return_value = ["Other Port"]
+        mock_input_names.return_value = []
 
-        with pytest.raises(ValueError, match="MIDI port 'Invalid' not found"):
+        with pytest.raises(ValueError, match="MIDI output port 'Invalid' not found"):
             MIDIInterface("Invalid")
 
+    @patch("mido.get_input_names")
     @patch("mido.get_output_names")
     @patch("mido.open_output")
-    def test_send_sysex(self, mock_open, mock_names):
+    def test_send_sysex(self, mock_open_output, mock_output_names, mock_input_names):
         """Test sending SysEx message."""
-        mock_names.return_value = ["Test Port"]
+        mock_output_names.return_value = ["Test Port"]
+        mock_input_names.return_value = []
         mock_port = Mock()
-        mock_open.return_value = mock_port
+        mock_open_output.return_value = mock_port
 
         interface = MIDIInterface("Test Port")
         sysex_data = b"\xf0\x43\x76\x10\x00\x42\xf7"
