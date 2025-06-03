@@ -62,19 +62,19 @@ class MIDIInterface:
             return None
 
         start_time = time.time()
-
         while time.time() - start_time < timeout:
             # Check for incoming messages with a small timeout
             try:
                 for msg in self.input_port.iter_pending():
                     if msg.type == "sysex":
                         # Reconstruct complete SysEx message with F0/F7
-                        return bytes([0xF0] + msg.data + [0xF7])
+                        return bytes([0xF0] + list(msg.data) + [0xF7])
 
                 # Small sleep to avoid busy waiting
                 time.sleep(0.001)
 
-            except Exception:
+            except Exception as e:
+                print(f"Exception in wait_for_sysex: {e}")
                 # Handle any MIDI errors gracefully
                 break
 
