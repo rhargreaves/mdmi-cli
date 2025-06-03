@@ -22,18 +22,55 @@ class TestMIDIInterface:
         interface = MIDIInterface("Test Port")
 
         assert interface.port_name == "Test Port"
+        assert interface.input_port_name == "Test Port"  # Defaults to output port name
         assert interface.input_port is None  # No input port available
         mock_open_output.assert_called_once_with("Test Port")
 
     @patch("mido.get_input_names")
     @patch("mido.get_output_names")
-    def test_real_midi_interface_invalid_port(self, mock_output_names, mock_input_names):
-        """Test real MIDI interface with invalid port."""
+    @patch("mido.open_input")
+    @patch("mido.open_output")
+    def test_real_midi_interface_with_separate_input(
+        self, mock_open_output, mock_open_input, mock_output_names, mock_input_names
+    ):
+        """Test real MIDI interface initialization with separate input port."""
+        mock_output_names.return_value = ["Test Out Port"]
+        mock_input_names.return_value = ["Test In Port"]
+        mock_output_port = Mock()
+        mock_input_port = Mock()
+        mock_open_output.return_value = mock_output_port
+        mock_open_input.return_value = mock_input_port
+
+        interface = MIDIInterface("Test Out Port", "Test In Port")
+
+        assert interface.port_name == "Test Out Port"
+        assert interface.input_port_name == "Test In Port"
+        assert interface.input_port is not None
+        mock_open_output.assert_called_once_with("Test Out Port")
+        mock_open_input.assert_called_once_with("Test In Port")
+
+    @patch("mido.get_input_names")
+    @patch("mido.get_output_names")
+    def test_real_midi_interface_invalid_output_port(self, mock_output_names, mock_input_names):
+        """Test real MIDI interface with invalid output port."""
         mock_output_names.return_value = ["Other Port"]
         mock_input_names.return_value = []
 
         with pytest.raises(ValueError, match="MIDI output port 'Invalid' not found"):
             MIDIInterface("Invalid")
+
+    @patch("mido.get_input_names")
+    @patch("mido.get_output_names")
+    @patch("mido.open_output")
+    def test_real_midi_interface_invalid_input_port(self, mock_open_output, mock_output_names, mock_input_names):
+        """Test real MIDI interface with invalid input port."""
+        mock_output_names.return_value = ["Test Port"]
+        mock_input_names.return_value = ["Other Port"]
+        mock_port = Mock()
+        mock_open_output.return_value = mock_port
+
+        with pytest.raises(ValueError, match="MIDI input port 'Invalid Input' not found"):
+            MIDIInterface("Test Port", "Invalid Input")
 
     @patch("mido.get_input_names")
     @patch("mido.get_output_names")

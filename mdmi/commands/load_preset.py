@@ -25,7 +25,7 @@ from .common import midi_options, get_midi_interface
     default="melody",
     help="WOPN bank type (default: melody)",
 )
-def load_preset(preset_file, program, port, fake, bank, instrument, bank_type):
+def load_preset(preset_file, program, midi_out, fake, bank, instrument, bank_type):
     """Load a preset file to MDMI."""
     try:
         preset_path = Path(preset_file)
@@ -45,7 +45,7 @@ def load_preset(preset_file, program, port, fake, bank, instrument, bank_type):
         generator = SysExGenerator()
         sysex_data = generator.generate_preset_load(preset, program)
 
-        interface = get_midi_interface(port, fake)
+        interface = get_midi_interface(midi_out, fake)
         interface.send_sysex(sysex_data)
 
         if format_type == "WOPN":

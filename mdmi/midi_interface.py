@@ -8,29 +8,34 @@ import time
 class MIDIInterface:
     """Real MIDI interface using mido."""
 
-    def __init__(self, port_name: str):
-        """Initialize MIDI interface with specified port.
+    def __init__(self, port_name: str, input_port_name: Optional[str] = None):
+        """Initialize MIDI interface with specified port(s).
 
         Args:
             port_name: Name of the MIDI output port
+            input_port_name: Name of the MIDI input port (optional, defaults to port_name)
 
         Raises:
-            ValueError: If port is not found
+            ValueError: If output port is not found
         """
         self.port_name = port_name
+        self.input_port_name = input_port_name or port_name
 
-        # Check if port exists for output
+        # Check if output port exists
         available_output_ports = mido.get_output_names()
         if port_name not in available_output_ports:
             raise ValueError(f"MIDI output port '{port_name}' not found. Available ports: {available_output_ports}")
 
         self.output_port = mido.open_output(port_name)
 
-        # Try to open input port (may not exist)
+        # Try to open input port
         self.input_port = None
         available_input_ports = mido.get_input_names()
-        if port_name in available_input_ports:
-            self.input_port = mido.open_input(port_name)
+        if self.input_port_name in available_input_ports:
+            self.input_port = mido.open_input(self.input_port_name)
+        elif input_port_name is not None:
+            # User explicitly specified an input port that doesn't exist
+            raise ValueError(f"MIDI input port '{input_port_name}' not found. Available ports: {available_input_ports}")
 
     def send_sysex(self, data: bytes) -> None:
         """Send SysEx data to MIDI interface.

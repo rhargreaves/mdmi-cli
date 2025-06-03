@@ -2,11 +2,11 @@
 
 import time
 import click
-from .common import midi_options, get_midi_interface
+from .common import ping_options, get_ping_interface
 
 
 @click.command()
-@midi_options
+@ping_options
 @click.option(
     "--timeout",
     type=float,
@@ -19,7 +19,7 @@ from .common import midi_options, get_midi_interface
     hidden=True,
     help="For testing: disable fake interface pong simulation",
 )
-def ping(port, fake, timeout, no_response):
+def ping(midi_out, midi_in, fake, timeout, no_response):
     """Send a ping to MDMI and measure round-trip latency.
 
     This command sends a ping SysEx message (00 22 77 01) to the MDMI
@@ -27,7 +27,7 @@ def ping(port, fake, timeout, no_response):
     """
     try:
         # Get MIDI interface
-        interface = get_midi_interface(port, fake)
+        interface = get_ping_interface(midi_out, midi_in, fake)
 
         # If testing with no response, disable pong simulation
         if no_response and fake:
@@ -37,6 +37,8 @@ def ping(port, fake, timeout, no_response):
         ping_message = bytes([0xF0, 0x00, 0x22, 0x77, 0x01, 0xF7])
 
         click.echo(f"Sending ping to {interface.port_name}...")
+        if hasattr(interface, "input_port_name") and interface.input_port_name != interface.port_name:
+            click.echo(f"Listening for pong on {interface.input_port_name}...")
 
         # Record start time and send ping
         start_time = time.time()

@@ -27,33 +27,43 @@ class TestCLI:
 
         assert result.exit_code == 0
         assert "Load a preset file to MDMI" in result.output
-        assert "MDMI_MIDI_PORT" in result.output
+        assert "MDMI_MIDI_OUT" in result.output
 
+    @patch("mido.get_input_names")
     @patch("mido.get_output_names")
-    def test_list_ports_without_preset_file(self, mock_get_ports):
+    def test_list_ports_without_preset_file(self, mock_get_output_ports, mock_get_input_ports):
         """Test list-ports command works properly."""
-        mock_get_ports.return_value = ["Test Port 1", "Test Port 2"]
+        mock_get_output_ports.return_value = ["Test Port 1", "Test Port 2"]
+        mock_get_input_ports.return_value = ["Input Port 1", "Input Port 2"]
 
         runner = CliRunner()
         result = runner.invoke(main, ["list-ports"])
 
         assert result.exit_code == 0
-        assert "Available MIDI output ports:" in result.output
+        assert "📤 Output ports (for sending to MDMI):" in result.output
+        assert "📥 Input ports (for receiving from MDMI):" in result.output
         assert "Test Port 1" in result.output
         assert "Test Port 2" in result.output
-        mock_get_ports.assert_called_once()
+        assert "Input Port 1" in result.output
+        assert "Input Port 2" in result.output
+        mock_get_output_ports.assert_called_once()
+        mock_get_input_ports.assert_called_once()
 
+    @patch("mido.get_input_names")
     @patch("mido.get_output_names")
-    def test_list_ports_no_ports_available(self, mock_get_ports):
+    def test_list_ports_no_ports_available(self, mock_get_output_ports, mock_get_input_ports):
         """Test list-ports command when no ports are available."""
-        mock_get_ports.return_value = []
+        mock_get_output_ports.return_value = []
+        mock_get_input_ports.return_value = []
 
         runner = CliRunner()
         result = runner.invoke(main, ["list-ports"])
 
         assert result.exit_code == 0
-        assert "No MIDI output ports found" in result.output
-        mock_get_ports.assert_called_once()
+        assert "(No MIDI output ports found)" in result.output
+        assert "(No MIDI input ports found)" in result.output
+        mock_get_output_ports.assert_called_once()
+        mock_get_input_ports.assert_called_once()
 
     def test_load_preset_without_arguments_shows_error(self):
         """Test that load-preset without arguments shows proper error."""
@@ -133,7 +143,7 @@ class TestCLI:
         mock_midi.return_value = mock_interface
 
         runner = CliRunner()
-        args = ["load-preset", "tests/data/sample.tfi", "--program", "0", "--port", "Test Port"]
+        args = ["load-preset", "tests/data/sample.tfi", "--program", "0", "--midi-out", "Test Port"]
         result = runner.invoke(main, args)
 
         assert result.exit_code == 0
@@ -168,7 +178,7 @@ class TestCLI:
 
         assert result.exit_code == 0
         assert "Clear a specific user preset" in result.output
-        assert "MDMI_MIDI_PORT" in result.output
+        assert "MDMI_MIDI_OUT" in result.output
 
     @patch("mdmi.commands.common.FakeMIDIInterface")
     def test_clear_preset_fake_interface(self, mock_fake_midi):
@@ -214,7 +224,7 @@ class TestCLI:
 
         assert result.exit_code == 0
         assert "Clear all user presets" in result.output
-        assert "MDMI_MIDI_PORT" in result.output
+        assert "MDMI_MIDI_OUT" in result.output
 
     @patch("mdmi.commands.common.FakeMIDIInterface")
     def test_clear_all_presets_with_confirm(self, mock_fake_midi):
@@ -345,7 +355,9 @@ class TestCLI:
         assert result.exit_code == 0
         assert "Send a ping to MDMI and measure round-trip latency" in result.output
         assert "--timeout" in result.output
-        assert "MDMI_MIDI_PORT" in result.output
+        assert "--midi-in" in result.output
+        assert "MDMI_MIDI_OUT" in result.output
+        assert "MDMI_MIDI_IN" in result.output
 
     @patch("mdmi.commands.common.FakeMIDIInterface")
     def test_ping_fake_interface_success(self, mock_fake_midi):
@@ -417,3 +429,30 @@ class TestCLI:
         assert "timeout: 2.5s" in result.output
         # Verify the timeout was passed to wait_for_sysex
         mock_interface.wait_for_sysex.assert_called_once_with(2.5)
+
+    def test_ping_with_environment_variables(self):
+        """Test ping command with environment variables."""
+        runner = CliRunner()
+        env = {"MDMI_MIDI_OUT": "Test Out Port", "MDMI_MIDI_IN": "Test In Port"}
+        result = runner.invoke(main, ["ping", "--fake"], env=env)
+
+        assert result.exit_code == 0
+        assert "✅ Pong received!" in result.output
+
+    def test_list_ports_updated_format(self):
+        """Test that list-ports shows the new format with input and output ports."""
+        runner = CliRunner()
+        with patch("mido.get_output_names") as mock_output, patch("mido.get_input_names") as mock_input:
+            mock_output.return_value = ["Output Port 1", "Output Port 2"]
+            mock_input.return_value = ["Input Port 1", "Input Port 2"]
+
+            result = runner.invoke(main, ["list-ports"])
+
+        assert result.exit_code == 0
+        assert "📤 Output ports (for sending to MDMI):" in result.output
+        assert "📥 Input ports (for receiving from MDMI):" in result.output
+        assert "Output Port 1" in result.output
+        assert "Input Port 1" in result.output
+        assert "MDMI_MIDI_OUT" in result.output
+        assert "MDMI_MIDI_IN" in result.output
+        assert "MDMI_MIDI_PORT" in result.output
