@@ -76,8 +76,8 @@ class TestCLI:
         assert result.exit_code != 0
         assert "does not exist" in result.output
 
-    @patch("mdmi.commands.load_preset.Path.read_bytes")
-    @patch("mdmi.commands.load_preset.detect_preset_format")
+    @patch("pathlib.Path.read_bytes")
+    @patch("mdmi.preset_parsers.detect_preset_format")
     @patch("mdmi.commands.common.FakeMIDIInterface")
     def test_load_preset_tfi_fake_interface(self, mock_fake_midi, mock_detect, mock_read):
         """Test loading TFI preset with fake interface."""
@@ -94,8 +94,8 @@ class TestCLI:
         assert "Successfully loaded" in result.output
         mock_interface.send_sysex.assert_called_once()
 
-    @patch("mdmi.commands.load_preset.Path.read_bytes")
-    @patch("mdmi.commands.load_preset.detect_preset_format")
+    @patch("pathlib.Path.read_bytes")
+    @patch("mdmi.preset_parsers.detect_preset_format")
     @patch("mdmi.commands.common.FakeMIDIInterface")
     def test_load_preset_with_env_port(self, mock_fake_midi, mock_detect, mock_read):
         """Test loading preset using MDMI_MIDI_PORT environment variable."""
@@ -116,8 +116,8 @@ class TestCLI:
         assert "Successfully loaded" in result.output
         mock_interface.send_sysex.assert_called_once()
 
-    @patch("mdmi.commands.load_preset.Path.read_bytes")
-    @patch("mdmi.commands.load_preset.detect_preset_format")
+    @patch("pathlib.Path.read_bytes")
+    @patch("mdmi.preset_parsers.detect_preset_format")
     @patch("mido.get_output_names")
     @patch("mdmi.commands.common.MIDIInterface")
     def test_load_preset_real_interface(self, mock_midi, mock_ports, mock_detect, mock_read):
@@ -145,8 +145,8 @@ class TestCLI:
         assert result.exit_code != 0
         assert "Invalid value for" in result.output
 
-    @patch("mdmi.commands.load_preset.Path.read_bytes")
-    @patch("mdmi.commands.load_preset.detect_preset_format")
+    @patch("pathlib.Path.read_bytes")
+    @patch("mdmi.preset_parsers.detect_preset_format")
     def test_load_preset_unsupported_format(self, mock_detect, mock_read):
         """Test load-preset with unsupported format."""
         mock_read.return_value = b"invalid"
@@ -267,79 +267,37 @@ class TestCLI:
         assert result.exit_code != 0
         mock_interface.send_sysex.assert_not_called()
 
-    @patch("mdmi.commands.list_wopn.Path.read_bytes")
-    @patch("mdmi.commands.list_wopn.detect_preset_format")
-    @patch("mdmi.commands.list_wopn.list_wopn_contents")
-    def test_list_wopn_command(self, mock_list_contents, mock_detect, mock_read):
+    def test_list_wopn_command(self):
         """Test list-wopn command with limited display (default)."""
-        # Setup mocks
-        mock_read.return_value = b"mock_wopn_data"
-        mock_detect.return_value = "WOPN"
-        mock_list_contents.return_value = {
-            "melody_banks": [
-                {
-                    "index": 0,
-                    "name": "Test Bank",
-                    "instruments": [
-                        {"index": i, "name": f"Instrument {i}"}
-                        for i in range(15)  # 15 instruments to test truncation
-                    ],
-                }
-            ],
-            "percussion_banks": [],
-        }
-
         runner = CliRunner()
-        with runner.isolated_filesystem():
-            # Create a test file so Click validation passes
-            with open("test.wopn", "wb") as f:
-                f.write(b"mock_wopn_data")
-
-            result = runner.invoke(main, ["list-wopn", "test.wopn"])
+        result = runner.invoke(main, ["list-wopn", "tests/data/sample.wopn"])
 
         assert result.exit_code == 0
-        assert "Test Bank" in result.output
-        assert "Instrument 0" in result.output
-        assert "Instrument 9" in result.output  # Should show first 10
-        assert "Instrument 10" not in result.output  # Should not show beyond 10
-        assert "... and 5 more (use --full to see all)" in result.output
+        assert "WOPN File: tests/data/sample.wopn" in result.output
+        assert "Melody Banks:" in result.output
+        assert "Standard :3" in result.output
+        assert "GrandPiano" in result.output
+        # Should show truncation message for banks with >10 instruments
+        assert "... and" in result.output
+        assert "more (use --full to see all)" in result.output
 
-    @patch("mdmi.commands.list_wopn.Path.read_bytes")
-    @patch("mdmi.commands.list_wopn.detect_preset_format")
-    @patch("mdmi.commands.list_wopn.list_wopn_contents")
-    def test_list_wopn_command_full(self, mock_list_contents, mock_detect, mock_read):
+    def test_list_wopn_command_full(self):
         """Test list-wopn command with --full option."""
-        # Setup mocks
-        mock_read.return_value = b"mock_wopn_data"
-        mock_detect.return_value = "WOPN"
-        mock_list_contents.return_value = {
-            "melody_banks": [
-                {
-                    "index": 0,
-                    "name": "Test Bank",
-                    "instruments": [
-                        {"index": i, "name": f"Instrument {i}"}
-                        for i in range(15)  # 15 instruments
-                    ],
-                }
-            ],
-            "percussion_banks": [],
-        }
-
         runner = CliRunner()
-        with runner.isolated_filesystem():
-            # Create a test file so Click validation passes
-            with open("test.wopn", "wb") as f:
-                f.write(b"mock_wopn_data")
+        result_default = runner.invoke(main, ["list-wopn", "tests/data/sample.wopn"])
+        result_full = runner.invoke(main, ["list-wopn", "tests/data/sample.wopn", "--full"])
 
-            result = runner.invoke(main, ["list-wopn", "test.wopn", "--full"])
+        assert result_full.exit_code == 0
+        assert "WOPN File: tests/data/sample.wopn" in result_full.output
+        assert "Melody Banks:" in result_full.output
+        assert "Standard :3" in result_full.output
+        assert "GrandPiano" in result_full.output
 
-        assert result.exit_code == 0
-        assert "Test Bank" in result.output
-        assert "Instrument 0" in result.output
-        assert "Instrument 9" in result.output
-        assert "Instrument 14" in result.output  # Should show all instruments
-        assert "... and" not in result.output  # Should not show truncation message
+        # Full output should be longer than default output
+        assert len(result_full.output) > len(result_default.output)
+
+        # Full output should not have truncation message
+        assert "... and" not in result_full.output or "more (use --full to see all)" not in result_full.output
 
     def test_list_wopn_help(self):
         """Test list-wopn command help includes --full option."""
