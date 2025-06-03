@@ -3,7 +3,7 @@
 from pathlib import Path
 import tempfile
 
-from mdmi.preset_parsers import TFIParser, DMPParser
+from mdmi.preset_parsers import detect_preset_format, parse_preset
 from mdmi.sysex_generator import SysExGenerator
 from mdmi.midi_interface import FakeMIDIInterface
 
@@ -13,24 +13,27 @@ class TestE2E:
 
     def test_tfi_preset_loading_e2e(self):
         """Test complete TFI preset loading workflow."""
-        # Create a minimal TFI file
+        # Create a minimal TFI file (42 bytes)
         tfi_data = bytearray(42)
-        tfi_data[0] = 0x23  # Algorithm 3, Feedback 4
+        tfi_data[0] = 0x03  # Algorithm 3
+        tfi_data[1] = 0x04  # Feedback 4
 
-        # Add some operator data
+        # Add some operator data (pattern similar to real TFI format)
         for i in range(4):  # 4 operators
-            offset = 1 + (i * 10)
+            offset = 2 + (i * 10)
             tfi_data[offset] = 0x15  # MUL=5, DT1=1
-            tfi_data[offset + 1] = 0x9F  # AR=31, RS=2
-            tfi_data[offset + 5] = 0x40  # TL=64
+            tfi_data[offset + 1] = 0x40  # TL=64
+            tfi_data[offset + 2] = 0x9F  # AR=31, RS=2
+
+        # Detect format
+        assert detect_preset_format(bytes(tfi_data)) == "TFI"
 
         # Parse preset
-        parser = TFIParser()
-        preset = parser.parse(bytes(tfi_data))
+        preset = parse_preset(bytes(tfi_data), "TFI")
 
         # Generate SysEx
         generator = SysExGenerator()
-        sysex_data = generator.generate_preset_load(preset, channel=2)
+        sysex_data = generator.generate_preset_load(preset, program=5)
 
         # Send via fake interface
         interface = FakeMIDIInterface()
@@ -41,32 +44,33 @@ class TestE2E:
         assert sent_sysex is not None
         assert sent_sysex[0] == 0xF0  # SysEx start
         assert sent_sysex[-1] == 0xF7  # SysEx end
-        assert sent_sysex[1] == 0x43  # Manufacturer ID
-        assert sent_sysex[4] == 2  # Channel
+        assert sent_sysex[1:4] == bytes([0x00, 0x22, 0x77])  # MDMI ID
+        assert sent_sysex[6] == 5  # Program number
 
     def test_dmp_preset_loading_e2e(self):
         """Test complete DMP preset loading workflow."""
-        # Create a minimal DMP file
+        # Create a DMP file (version 8 format)
         dmp_data = bytearray()
-        dmp_data.extend(b".DMP")  # Signature
-        dmp_data.append(11)  # Version 11
-        dmp_data.append(1)  # System (YM2612)
+        dmp_data.append(8)  # Version 8
+        dmp_data.append(1)  # Instrument mode (FM)
+        dmp_data.append(0)  # Unknown byte
 
-        # Name (32 bytes)
-        name = b"Test DMP Preset\x00"
-        name_padded = name + b"\x00" * (32 - len(name))
-        dmp_data.extend(name_padded)
+        # FM parameters
+        dmp_data.extend([0x03, 0x04, 0x05, 0x02])  # LFO_FMS, Feedback, Algorithm, LFO_AMS
 
-        # FM parameters (11 bytes)
-        dmp_data.extend([0x35, 0x12] + [0x00] * 9)  # Alg=5, FB=6, LFO
+        # Operator data (4 operators × 11 bytes each)
+        for i in range(4):
+            dmp_data.extend([0x01, 0x40, 0x1F, 0x0F, 0x0F, 0x00, 0x02, 0x03, 0x00, 0x00, 0x00])
+
+        # Detect format
+        assert detect_preset_format(bytes(dmp_data)) == "DMP"
 
         # Parse preset
-        parser = DMPParser()
-        preset = parser.parse(bytes(dmp_data))
+        preset = parse_preset(bytes(dmp_data), "DMP")
 
         # Generate SysEx
         generator = SysExGenerator()
-        sysex_data = generator.generate_preset_load(preset, channel=1)
+        sysex_data = generator.generate_preset_load(preset, program=10)
 
         # Send via fake interface
         interface = FakeMIDIInterface()
@@ -77,59 +81,67 @@ class TestE2E:
         assert sent_sysex is not None
         assert sent_sysex[0] == 0xF0  # SysEx start
         assert sent_sysex[-1] == 0xF7  # SysEx end
-        assert sent_sysex[4] == 1  # Channel
-        assert preset.name == "Test DMP Preset"
-        assert preset.algorithm == 5
-        assert preset.feedback == 6
+        assert sent_sysex[1:4] == bytes([0x00, 0x22, 0x77])  # MDMI ID
+        assert sent_sysex[6] == 10  # Program number
 
     def test_multiple_presets_e2e(self):
-        """Test loading multiple presets to different channels."""
+        """Test loading multiple presets to different programs."""
         interface = FakeMIDIInterface()
         generator = SysExGenerator()
 
-        # Load TFI to channel 0
-        tfi_data = b"\x00" * 42
-        tfi_parser = TFIParser()
-        tfi_preset = tfi_parser.parse(tfi_data)
-        tfi_sysex = generator.generate_preset_load(tfi_preset, channel=0)
+        # Load TFI to program 0
+        tfi_data = bytearray(42)
+        tfi_data[0] = 0x02  # Algorithm 2
+        tfi_data[1] = 0x03  # Feedback 3
+        # Add minimal operator data
+        for i in range(4):
+            offset = 2 + (i * 10)
+            tfi_data[offset] = 0x01  # Some operator data
+
+        tfi_preset = parse_preset(bytes(tfi_data), "TFI")
+        tfi_sysex = generator.generate_preset_load(tfi_preset, program=0)
         interface.send_sysex(tfi_sysex)
 
-        # Create and load DMP to channel 1
-        dmp_data = (
-            b".DMP\x0b\x01"  # Signature, version, system
-            + b"DMP Test\x00"
-            + b"\x00" * 22  # Name padded to 32 bytes
-            + b"\x1a\x25"
-            + b"\x00" * 9  # FM parameters
-        )
-        dmp_parser = DMPParser()
-        dmp_preset = dmp_parser.parse(dmp_data)
-        dmp_sysex = generator.generate_preset_load(dmp_preset, channel=1)
+        # Create and load DMP to program 1
+        dmp_data = bytearray([8, 1, 0, 0x03, 0x04, 0x05, 0x02])  # Header + FM params
+        for i in range(4):  # 4 operators
+            dmp_data.extend([0x01, 0x40, 0x1F, 0x0F, 0x0F, 0x00, 0x02, 0x03, 0x00, 0x00, 0x00])
+
+        dmp_preset = parse_preset(bytes(dmp_data), "DMP")
+        dmp_sysex = generator.generate_preset_load(dmp_preset, program=1)
         interface.send_sysex(dmp_sysex)
 
         # Verify both messages were sent
         assert len(interface.sent_messages) == 2
 
-        # Verify channel assignments
-        assert interface.sent_messages[0][4] == 0  # TFI to channel 0
-        assert interface.sent_messages[1][4] == 1  # DMP to channel 1
+        # Verify program assignments
+        assert interface.sent_messages[0][6] == 0  # TFI to program 0
+        assert interface.sent_messages[1][6] == 1  # DMP to program 1
 
     def test_file_io_e2e(self):
         """Test end-to-end with actual file I/O."""
         with tempfile.TemporaryDirectory() as tmpdir:
             # Create a TFI file
             tfi_path = Path(tmpdir) / "test.tfi"
-            tfi_data = b"\x23" + b"\x00" * 41  # Algorithm 3, rest zeros
+            tfi_data = bytearray(42)
+            tfi_data[0] = 0x05  # Algorithm 5
+            tfi_data[1] = 0x07  # Feedback 7
+            # Add minimal operator data
+            for i in range(4):
+                offset = 2 + (i * 10)
+                tfi_data[offset] = 0x01
             tfi_path.write_bytes(tfi_data)
 
             # Parse from file
             data = tfi_path.read_bytes()
-            parser = TFIParser()
-            preset = parser.parse(data)
+            format_type = detect_preset_format(data)
+            assert format_type == "TFI"
+
+            preset = parse_preset(data, format_type)
 
             # Generate and send SysEx
             generator = SysExGenerator()
-            sysex_data = generator.generate_preset_load(preset, channel=3)
+            sysex_data = generator.generate_preset_load(preset, program=15)
 
             interface = FakeMIDIInterface()
             interface.send_sysex(sysex_data)
@@ -137,5 +149,5 @@ class TestE2E:
             # Verify
             sent_sysex = interface.get_last_sysex()
             assert sent_sysex is not None
-            assert sent_sysex[4] == 3  # Channel 3
-            assert preset.algorithm == 3
+            assert sent_sysex[6] == 15  # Program 15
+            assert preset.algorithm == 5

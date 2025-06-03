@@ -175,7 +175,7 @@ class TestE2ENewParsers:
         assert preset.format_type == "DMP"
 
         # Test WOPN detection
-        wopn_data = b"WOPN2-BANK\x00" + b"\x00" * 100
+        wopn_data = b"WOPN2-B2NK\x00" + b"\x00" * 100
         assert detect_preset_format(wopn_data) == "WOPN"
 
     def test_sysex_operator_mapping(self):

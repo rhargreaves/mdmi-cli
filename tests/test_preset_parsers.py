@@ -25,7 +25,7 @@ class TestFormatDetection:
 
     def test_detect_wopn_format(self):
         """Test WOPN format detection."""
-        wopn_data = b"WOPN2-BANK\x00" + b"\x00" * 20
+        wopn_data = b"WOPN2-B2NK\x00" + b"\x00" * 20
         assert detect_preset_format(wopn_data) == "WOPN"
 
     def test_detect_unknown_format(self):
@@ -41,8 +41,8 @@ class TestTFIParser:
         """Test parsing basic TFI data."""
         # Create minimal TFI data
         tfi_data = bytearray(42)
-        tfi_data[0] = 0x12  # Algorithm 2, Feedback 2
-        tfi_data[1] = 0x34  # Additional byte
+        tfi_data[0] = 0x02  # Algorithm 2
+        tfi_data[1] = 0x03  # Feedback 3
 
         # Add operator data (each operator is 10 bytes)
         for i in range(4):
@@ -53,7 +53,7 @@ class TestTFIParser:
 
         assert preset.format_type == "TFI"
         assert preset.algorithm == 2
-        assert preset.feedback == 2
+        assert preset.feedback == 3
         assert len(preset.operators) == 4
 
     def test_parse_invalid_tfi_size(self):
@@ -67,19 +67,24 @@ class TestDMPParser:
 
     def test_parse_basic_dmp(self):
         """Test parsing basic DMP data."""
-        # Create minimal DMP data
-        dmp_data = bytearray(50)
-        dmp_data[0] = 11  # Version 11
-        dmp_data[1] = 2  # System type Genesis
-        dmp_data[2] = 1  # FM instrument mode
-        # Name starts at offset 3 for 32 bytes
-        name = b"Test DMP"
-        dmp_data[3 : 3 + len(name)] = name
+        # Create DMP data (version 8 format for simplicity)
+        dmp_data = bytearray()
+        dmp_data.append(8)  # Version 8
+        dmp_data.append(1)  # Instrument mode (FM)
+        dmp_data.append(0)  # Unknown byte
+
+        # FM parameters
+        dmp_data.extend([0x03, 0x04, 0x05, 0x02])  # LFO_FMS, Feedback, Algorithm, LFO_AMS
+
+        # Operator data (4 operators × 11 bytes each)
+        for i in range(4):
+            dmp_data.extend([0x01, 0x40, 0x1F, 0x0F, 0x0F, 0x00, 0x02, 0x03, 0x00, 0x00, 0x00])
 
         preset = parse_preset(bytes(dmp_data), "DMP")
 
         assert preset.format_type == "DMP"
-        assert preset.name == "Test DMP"
+        assert preset.algorithm == 5
+        assert preset.feedback == 4
 
 
 class TestWOPNParser:

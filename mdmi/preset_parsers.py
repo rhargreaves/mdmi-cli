@@ -59,12 +59,15 @@ class Preset:
 
 def detect_preset_format(data: bytes) -> str:
     """Detect preset format from data content."""
-    if len(data) >= 12 and data.startswith(b"WOPN2-BANK\x00"):
+    if len(data) >= 12 and data.startswith(b"WOPN2-B2NK\x00"):
         return "WOPN"
     elif len(data) >= 4 and data.startswith(b".DMP"):
         return "DMP"
     elif len(data) == 42:
         return "TFI"
+    elif len(data) > 0 and data[0] in [8, 9, 11]:
+        # DMP files can start directly with version byte (8, 9, or 11)
+        return "DMP"
     else:
         return "UNKNOWN"
 
