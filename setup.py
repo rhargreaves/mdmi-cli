@@ -4,7 +4,7 @@ setup(
     name="mdmi-cli",
     version="0.1.0",
     description="CLI tool for Mega Drive MIDI Interface SysEx control",
-    author="Robert",
+    author="rhargreaves",
     packages=find_packages(),
     install_requires=[
         "click>=8.0.0",
