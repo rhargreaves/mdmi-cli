@@ -27,16 +27,28 @@ class TestCLI:
 
     @patch("mido.get_output_names")
     def test_list_ports_without_preset_file(self, mock_get_ports):
-        """Test --list-ports works without requiring preset file."""
+        """Test list-ports command works properly."""
         mock_get_ports.return_value = ["Test Port 1", "Test Port 2"]
 
         runner = CliRunner()
-        result = runner.invoke(main, ["load-preset", "--list-ports"])
+        result = runner.invoke(main, ["list-ports"])
 
         assert result.exit_code == 0
-        assert "Available MIDI ports:" in result.output
+        assert "Available MIDI output ports:" in result.output
         assert "Test Port 1" in result.output
         assert "Test Port 2" in result.output
+        mock_get_ports.assert_called_once()
+
+    @patch("mido.get_output_names")
+    def test_list_ports_no_ports_available(self, mock_get_ports):
+        """Test list-ports command when no ports are available."""
+        mock_get_ports.return_value = []
+
+        runner = CliRunner()
+        result = runner.invoke(main, ["list-ports"])
+
+        assert result.exit_code == 0
+        assert "No MIDI output ports found" in result.output
         mock_get_ports.assert_called_once()
 
     def test_load_preset_without_arguments_shows_error(self):

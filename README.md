@@ -33,7 +33,7 @@ python -m mdmi.cli load-preset example.dmp --program 5 --port "USB MIDI Interfac
 python -m mdmi.cli load-preset soundbank.wopn --program 10 --bank 0 --instrument 5 --bank-type melody --fake
 
 # List available MIDI ports
-python -m mdmi.cli load-preset --list-ports
+python -m mdmi.cli list-ports
 ```
 
 ### WOPN file management

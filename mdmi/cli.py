@@ -24,7 +24,6 @@ def main():
 )
 @click.option("--port", help="MIDI output port name")
 @click.option("--fake", is_flag=True, help="Use fake MIDI interface for testing")
-@click.option("--list-ports", is_flag=True, help="List available MIDI ports")
 @click.option("--bank", type=int, default=0, help="WOPN bank index (default: 0)")
 @click.option("--instrument", type=int, default=0, help="WOPN instrument index (default: 0)")
 @click.option(
@@ -33,15 +32,8 @@ def main():
     default="melody",
     help="WOPN bank type (default: melody)",
 )
-def load_preset(preset_file, program, port, fake, list_ports, bank, instrument, bank_type):
+def load_preset(preset_file, program, port, fake, bank, instrument, bank_type):
     """Load a preset file to MDMI."""
-    if list_ports:
-        ports = mido.get_output_names()
-        click.echo("Available MIDI ports:")
-        for port_name in ports:
-            click.echo(f"  {port_name}")
-        return
-
     if not preset_file:
         click.echo("Error: PRESET_FILE is required")
         raise click.Abort()
@@ -86,6 +78,22 @@ def load_preset(preset_file, program, port, fake, list_ports, bank, instrument, 
             msg = f"Successfully loaded {format_type} preset to program {program}"
         click.echo(msg)
 
+    except Exception as e:
+        click.echo(f"Error: {e}")
+        raise click.Abort()
+
+
+@main.command()
+def list_ports():
+    """List available MIDI output ports."""
+    try:
+        ports = mido.get_output_names()
+        if not ports:
+            click.echo("No MIDI output ports found")
+        else:
+            click.echo("Available MIDI output ports:")
+            for port_name in ports:
+                click.echo(f"  {port_name}")
     except Exception as e:
         click.echo(f"Error: {e}")
         raise click.Abort()
