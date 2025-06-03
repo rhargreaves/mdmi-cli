@@ -5,10 +5,10 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "mdmi-cli"
 version = "0.1.0"
-description = "CLI tool for Mega Drive MIDI Interface SysEx control"
-authors = [{name = "rhargreaves"}]
+description = "CLI tool for working with the Mega Drive MIDI Interface (MDMI)"
+authors = [{ name = "rhargreaves" }]
 requires-python = ">=3.10"
-license = {text = "MIT"}
+license = { text = "MIT" }
 readme = "README.md"
 keywords = ["midi", "sysex", "mega-drive", "fm-synthesis", "cli"]
 classifiers = [
@@ -23,18 +23,10 @@ classifiers = [
     "Topic :: Multimedia :: Sound/Audio :: MIDI",
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
-dependencies = [
-    "click>=8.0.0",
-    "mido>=1.2.10",
-    "bitstruct>=8.15.0",
-]
+dependencies = ["click>=8.0.0", "mido>=1.2.10", "bitstruct>=8.15.0"]
 
 [project.optional-dependencies]
-dev = [
-    "pytest>=7.0.0",
-    "pytest-mock>=3.10.0",
-    "ruff>=0.1.0",
-]
+dev = ["pytest>=7.0.0", "pytest-mock>=3.10.0", "ruff>=0.1.0"]
 
 [project.scripts]
 mdmi = "mdmi.cli:main"

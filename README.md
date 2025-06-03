@@ -1,6 +1,6 @@
-# MDMI CLI
+# Mega Drive MIDI Interface CLI
 
-Python CLI for controlling the Mega Drive MIDI Interface (MDMI) via SysEx commands. Supports loading presets in WOPN, DMP, and TFI formats with sophisticated instrument selection for WOPN files.
+Python CLI for controlling the Mega Drive MIDI Interface (MDMI). Supports loading presets in WOPN, DMP, and TFI formats with instrument selection for WOPN files.
 
 ## Features
 
@@ -12,8 +12,21 @@ Python CLI for controlling the Mega Drive MIDI Interface (MDMI) via SysEx comman
 - **Flexible MIDI support**: Works with both real MIDI hardware and fake interface for testing
 - **Comprehensive testing**: Full test coverage including real-world data validation
 
-## Installation
+## Installation (from PyPi)
 
+```bash
+pip install mdmi-cli
+```
+
+## Installation (from source)
+
+```bash
+make install
+```
+
+## Build
+
+### Add Requirements
 ```bash
 pip install -r requirements.txt
 ```
@@ -24,42 +37,42 @@ pip install -r requirements.txt
 
 ```bash
 # Load TFI preset to program 0
-python -m mdmi.cli load-preset example.tfi --program 0 --fake
+mdmi-cli load-preset example.tfi --program 0 --fake
 
 # Load DMP preset to program 5 via real MIDI port
-python -m mdmi.cli load-preset example.dmp --program 5 --port "USB MIDI Interface"
+mdmi-cli load-preset example.dmp --program 5 --port "USB MIDI Interface"
 
 # Load specific WOPN instrument to program 10
-python -m mdmi.cli load-preset soundbank.wopn --program 10 --bank 0 --instrument 5 --bank-type melody --fake
+mdmi-cli load-preset soundbank.wopn --program 10 --bank 0 --instrument 5 --bank-type melody --fake
 
 # List available MIDI ports
-python -m mdmi.cli list-ports
+mdmi-cli list-ports
 ```
 
 ### WOPN file management
 
 ```bash
 # List contents of a WOPN file
-python -m mdmi.cli list-wopn soundbank.wopn
+mdmi-cli list-wopn soundbank.wopn
 
 # Load percussion instrument from WOPN
-python -m mdmi.cli load-preset soundbank.wopn --program 20 --bank 0 --instrument 3 --bank-type percussion --fake
+mdmi-cli load-preset soundbank.wopn --program 20 --bank 0 --instrument 3 --bank-type percussion --fake
 
 # Load from different melody bank
-python -m mdmi.cli load-preset soundbank.wopn --program 15 --bank 1 --instrument 65 --bank-type melody --fake
+mdmi-cli load-preset soundbank.wopn --program 15 --bank 1 --instrument 65 --bank-type melody --fake
 ```
 
 ### Clear presets
 
 ```bash
 # Clear preset at program 5
-python -m mdmi.cli clear-preset --program 5 --fake
+mdmi-cli clear-preset --program 5 --fake
 
 # Clear all presets (with confirmation)
-python -m mdmi.cli clear-all-presets --fake
+mdmi-cli clear-all-presets --fake
 
 # Clear all presets (skip confirmation)
-python -m mdmi.cli clear-all-presets --fake --confirm
+mdmi-cli clear-all-presets --fake --confirm
 ```
 
 ## SysEx Format
@@ -149,58 +162,19 @@ The project includes real sample data for testing:
 
 ```bash
 # Test TFI loading
-python -m mdmi.cli load-preset tests/data/sample.tfi --program 5 --fake
+mdmi-cli load-preset tests/data/sample.tfi --program 5 --fake
 
 # Test DMP variants
-python -m mdmi.cli load-preset tests/data/sample.dmp --program 10 --fake      # Version 8
-python -m mdmi.cli load-preset tests/data/sample_v9.dmp --program 11 --fake   # Version 9
-python -m mdmi.cli load-preset tests/data/sample_new.dmp --program 12 --fake  # Version 11
+mdmi-cli load-preset tests/data/sample.dmp --program 10 --fake      # Version 8
+mdmi-cli load-preset tests/data/sample_v9.dmp --program 11 --fake   # Version 9
+mdmi-cli load-preset tests/data/sample_new.dmp --program 12 --fake  # Version 11
 
 # Explore WOPN contents
-python -m mdmi.cli list-wopn tests/data/sample.wopn
+mdmi-cli list-wopn tests/data/sample.wopn
 
 # Load specific WOPN instruments
-python -m mdmi.cli load-preset tests/data/sample.wopn --program 20 --bank 0 --instrument 0 --bank-type melody --fake
-python -m mdmi.cli load-preset tests/data/sample.wopn --program 25 --bank 0 --instrument 35 --bank-type percussion --fake
-```
-
-### Project Structure
-
-```
-mdmi/
-├── __init__.py
-├── cli.py                    # Main CLI interface
-├── midi_interface.py         # MIDI communication layer
-├── preset_parsers.py         # Parser adapter and format detection
-├── sysex_generator.py        # SysEx message generation
-├── preset.py                # Base preset classes
-├── fm_operator.py           # FM operator data structures
-├── util.py                  # Utility functions
-├── ui.py                    # User interface helpers
-└── presets/                 # Modular format parsers
-    ├── wopn_parser.py       # WOPN format parser
-    ├── dmp_parser.py        # DMP format parser
-    ├── tfi_parser.py        # TFI format parser
-    ├── wopn.py              # WOPN data structures
-    ├── dmp.py               # DMP data structures
-    ├── tfi.py               # TFI data structures
-    ├── wopn_bank.py         # WOPN bank structures
-    └── wopn_instrument.py   # WOPN instrument structures
-
-tests/
-├── test_cli.py              # CLI interface tests
-├── test_e2e.py              # End-to-end workflow tests
-├── test_e2e_new_parsers.py  # E2E tests with new parser structure
-├── test_midi_interface.py   # MIDI interface tests
-├── test_preset_parsers.py   # Parser functionality tests
-├── test_real_data.py        # Real sample data validation tests
-├── test_sysex_generator.py  # SysEx generation tests
-└── data/                    # Real sample data for testing
-    ├── sample.tfi           # TFI sample (42 bytes)
-    ├── sample.dmp           # DMP v8 sample
-    ├── sample_v9.dmp        # DMP v9 sample
-    ├── sample_new.dmp       # DMP v11 sample
-    └── sample.wopn          # WOPN sample (61KB with multiple banks)
+mdmi-cli load-preset tests/data/sample.wopn --program 20 --bank 0 --instrument 0 --bank-type melody --fake
+mdmi-cli load-preset tests/data/sample.wopn --program 25 --bank 0 --instrument 35 --bank-type percussion --fake
 ```
 
 ## Dependencies
@@ -209,14 +183,6 @@ tests/
 - **mido**: MIDI library for hardware communication and SysEx handling
 - **bitstruct**: Binary data parsing library for efficient preset format parsing
 - **pytest**: Testing framework for comprehensive test coverage
-
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Add tests for new functionality
-4. Ensure all tests pass: `python -m pytest`
-5. Submit a pull request
 
 ## License
 
