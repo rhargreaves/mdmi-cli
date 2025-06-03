@@ -1,5 +1,10 @@
 # Mega Drive MIDI Interface CLI
 
+[![PyPI](https://img.shields.io/pypi/v/mdmi-cli)](https://pypi.org/project/mdmi-cli/)
+[![PyPI - Python Version](https://img.shields.io/pypi/pyversions/mdmi-cli)](https://pypi.org/project/mdmi-cli/)
+[![PyPI - License](https://img.shields.io/pypi/l/mdmi-cli)](https://github.com/rhargreaves/mdmi-cli/blob/main/LICENSE)
+[![Build](https://github.com/rhargreaves/mdmi-cli/actions/workflows/build.yml/badge.svg)](https://github.com/rhargreaves/mdmi-cli/actions/workflows/build.yml)
+
 Python CLI for controlling the Mega Drive MIDI Interface (MDMI). Supports loading presets in WOPN, DMP, and TFI formats with instrument selection for WOPN files.
 
 ## Features
