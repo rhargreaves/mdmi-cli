@@ -63,7 +63,6 @@ class TestCLI:
     def test_load_preset_without_program_shows_error(self):
         """Test that load-preset without program shows proper error."""
         runner = CliRunner()
-        # Use a file that actually exists in our test data
         result = runner.invoke(main, ["load-preset", "tests/data/sample.tfi"])
 
         assert result.exit_code != 0
@@ -77,9 +76,9 @@ class TestCLI:
         assert result.exit_code != 0
         assert "does not exist" in result.output
 
-    @patch("mdmi.cli.Path.read_bytes")
-    @patch("mdmi.cli.detect_preset_format")
-    @patch("mdmi.cli.FakeMIDIInterface")
+    @patch("mdmi.commands.load_preset.Path.read_bytes")
+    @patch("mdmi.commands.load_preset.detect_preset_format")
+    @patch("mdmi.commands.load_preset.FakeMIDIInterface")
     def test_load_preset_tfi_fake_interface(self, mock_fake_midi, mock_detect, mock_read):
         """Test loading TFI preset with fake interface."""
         # Setup mocks
@@ -89,16 +88,15 @@ class TestCLI:
         mock_fake_midi.return_value = mock_interface
 
         runner = CliRunner()
-        # Use a file that actually exists in our test data
         result = runner.invoke(main, ["load-preset", "tests/data/sample.tfi", "--program", "0", "--fake"])
 
         assert result.exit_code == 0
         assert "Successfully loaded" in result.output
         mock_interface.send_sysex.assert_called_once()
 
-    @patch("mdmi.cli.Path.read_bytes")
-    @patch("mdmi.cli.detect_preset_format")
-    @patch("mdmi.cli.FakeMIDIInterface")
+    @patch("mdmi.commands.load_preset.Path.read_bytes")
+    @patch("mdmi.commands.load_preset.detect_preset_format")
+    @patch("mdmi.commands.load_preset.FakeMIDIInterface")
     def test_load_preset_with_env_port(self, mock_fake_midi, mock_detect, mock_read):
         """Test loading preset using MDMI_MIDI_PORT environment variable."""
         # Setup mocks
@@ -118,10 +116,10 @@ class TestCLI:
         assert "Successfully loaded" in result.output
         mock_interface.send_sysex.assert_called_once()
 
-    @patch("mdmi.cli.Path.read_bytes")
-    @patch("mdmi.cli.detect_preset_format")
+    @patch("mdmi.commands.load_preset.Path.read_bytes")
+    @patch("mdmi.commands.load_preset.detect_preset_format")
     @patch("mido.get_output_names")
-    @patch("mdmi.cli.MIDIInterface")
+    @patch("mdmi.commands.load_preset.MIDIInterface")
     def test_load_preset_real_interface(self, mock_midi, mock_ports, mock_detect, mock_read):
         """Test loading preset with real MIDI interface."""
         # Setup mocks
@@ -132,7 +130,6 @@ class TestCLI:
         mock_midi.return_value = mock_interface
 
         runner = CliRunner()
-        # Use a file that actually exists in our test data
         args = ["load-preset", "tests/data/sample.tfi", "--program", "0", "--port", "Test Port"]
         result = runner.invoke(main, args)
 
@@ -148,15 +145,14 @@ class TestCLI:
         assert result.exit_code != 0
         assert "Invalid value for" in result.output
 
-    @patch("mdmi.cli.Path.read_bytes")
-    @patch("mdmi.cli.detect_preset_format")
+    @patch("mdmi.commands.load_preset.Path.read_bytes")
+    @patch("mdmi.commands.load_preset.detect_preset_format")
     def test_load_preset_unsupported_format(self, mock_detect, mock_read):
         """Test load-preset with unsupported format."""
         mock_read.return_value = b"invalid"
         mock_detect.return_value = "UNKNOWN"
 
         runner = CliRunner()
-        # Use a file that actually exists in our test data
         result = runner.invoke(main, ["load-preset", "tests/data/sample.tfi", "--program", "0", "--fake"])
 
         assert result.exit_code != 0
@@ -171,7 +167,7 @@ class TestCLI:
         assert "Clear a specific user preset" in result.output
         assert "MDMI_MIDI_PORT" in result.output
 
-    @patch("mdmi.cli.FakeMIDIInterface")
+    @patch("mdmi.commands.clear_preset.FakeMIDIInterface")
     def test_clear_preset_fake_interface(self, mock_fake_midi):
         """Test clearing preset with fake interface."""
         mock_interface = Mock()
@@ -184,7 +180,7 @@ class TestCLI:
         assert "Successfully cleared preset 5" in result.output
         mock_interface.send_sysex.assert_called_once()
 
-    @patch("mdmi.cli.FakeMIDIInterface")
+    @patch("mdmi.commands.clear_preset.FakeMIDIInterface")
     def test_clear_preset_with_env_port(self, mock_fake_midi):
         """Test clearing preset using MDMI_MIDI_PORT environment variable."""
         mock_interface = Mock()
@@ -217,7 +213,7 @@ class TestCLI:
         assert "Clear all user presets" in result.output
         assert "MDMI_MIDI_PORT" in result.output
 
-    @patch("mdmi.cli.FakeMIDIInterface")
+    @patch("mdmi.commands.clear_all_presets.FakeMIDIInterface")
     def test_clear_all_presets_with_confirm(self, mock_fake_midi):
         """Test clearing all presets with --confirm flag."""
         mock_interface = Mock()
@@ -230,7 +226,7 @@ class TestCLI:
         assert "Successfully cleared all presets" in result.output
         mock_interface.send_sysex.assert_called_once()
 
-    @patch("mdmi.cli.FakeMIDIInterface")
+    @patch("mdmi.commands.clear_all_presets.FakeMIDIInterface")
     def test_clear_all_presets_with_env_port(self, mock_fake_midi):
         """Test clearing all presets using MDMI_MIDI_PORT environment variable."""
         mock_interface = Mock()
@@ -246,7 +242,7 @@ class TestCLI:
         assert "Successfully cleared all presets" in result.output
         mock_interface.send_sysex.assert_called_once()
 
-    @patch("mdmi.cli.FakeMIDIInterface")
+    @patch("mdmi.commands.clear_all_presets.FakeMIDIInterface")
     def test_clear_all_presets_with_user_confirmation(self, mock_fake_midi):
         """Test clearing all presets with user confirmation."""
         mock_interface = Mock()
@@ -259,7 +255,7 @@ class TestCLI:
         assert "Successfully cleared all presets" in result.output
         mock_interface.send_sysex.assert_called_once()
 
-    @patch("mdmi.cli.FakeMIDIInterface")
+    @patch("mdmi.commands.clear_all_presets.FakeMIDIInterface")
     def test_clear_all_presets_user_aborts(self, mock_fake_midi):
         """Test clearing all presets when user aborts."""
         mock_interface = Mock()
@@ -271,9 +267,9 @@ class TestCLI:
         assert result.exit_code != 0
         mock_interface.send_sysex.assert_not_called()
 
-    @patch("mdmi.cli.Path.read_bytes")
-    @patch("mdmi.cli.detect_preset_format")
-    @patch("mdmi.cli.list_wopn_contents")
+    @patch("mdmi.commands.list_wopn.Path.read_bytes")
+    @patch("mdmi.commands.list_wopn.detect_preset_format")
+    @patch("mdmi.commands.list_wopn.list_wopn_contents")
     def test_list_wopn_command(self, mock_list_contents, mock_detect, mock_read):
         """Test list-wopn command with limited display (default)."""
         # Setup mocks
@@ -308,9 +304,9 @@ class TestCLI:
         assert "Instrument 10" not in result.output  # Should not show beyond 10
         assert "... and 5 more (use --full to see all)" in result.output
 
-    @patch("mdmi.cli.Path.read_bytes")
-    @patch("mdmi.cli.detect_preset_format")
-    @patch("mdmi.cli.list_wopn_contents")
+    @patch("mdmi.commands.list_wopn.Path.read_bytes")
+    @patch("mdmi.commands.list_wopn.detect_preset_format")
+    @patch("mdmi.commands.list_wopn.list_wopn_contents")
     def test_list_wopn_command_full(self, mock_list_contents, mock_detect, mock_read):
         """Test list-wopn command with --full option."""
         # Setup mocks
