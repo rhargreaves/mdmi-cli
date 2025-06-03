@@ -37,42 +37,42 @@ pip install -r requirements.txt
 
 ```bash
 # Load TFI preset to program 0
-mdmi-cli load-preset example.tfi --program 0 --fake
+mdmi load-preset example.tfi --program 0 --fake
 
 # Load DMP preset to program 5 via real MIDI port
-mdmi-cli load-preset example.dmp --program 5 --port "USB MIDI Interface"
+mdmi load-preset example.dmp --program 5 --port "USB MIDI Interface"
 
 # Load specific WOPN instrument to program 10
-mdmi-cli load-preset soundbank.wopn --program 10 --bank 0 --instrument 5 --bank-type melody --fake
+mdmi load-preset soundbank.wopn --program 10 --bank 0 --instrument 5 --bank-type melody --fake
 
 # List available MIDI ports
-mdmi-cli list-ports
+mdmi list-ports
 ```
 
 ### WOPN file management
 
 ```bash
 # List contents of a WOPN file
-mdmi-cli list-wopn soundbank.wopn
+mdmi list-wopn soundbank.wopn
 
 # Load percussion instrument from WOPN
-mdmi-cli load-preset soundbank.wopn --program 20 --bank 0 --instrument 3 --bank-type percussion --fake
+mdmi load-preset soundbank.wopn --program 20 --bank 0 --instrument 3 --bank-type percussion --fake
 
 # Load from different melody bank
-mdmi-cli load-preset soundbank.wopn --program 15 --bank 1 --instrument 65 --bank-type melody --fake
+mdmi load-preset soundbank.wopn --program 15 --bank 1 --instrument 65 --bank-type melody --fake
 ```
 
 ### Clear presets
 
 ```bash
 # Clear preset at program 5
-mdmi-cli clear-preset --program 5 --fake
+mdmi clear-preset --program 5 --fake
 
 # Clear all presets (with confirmation)
-mdmi-cli clear-all-presets --fake
+mdmi clear-all-presets --fake
 
 # Clear all presets (skip confirmation)
-mdmi-cli clear-all-presets --fake --confirm
+mdmi clear-all-presets --fake --confirm
 ```
 
 ## SysEx Format
@@ -162,19 +162,19 @@ The project includes real sample data for testing:
 
 ```bash
 # Test TFI loading
-mdmi-cli load-preset tests/data/sample.tfi --program 5 --fake
+mdmi load-preset tests/data/sample.tfi --program 5 --fake
 
 # Test DMP variants
-mdmi-cli load-preset tests/data/sample.dmp --program 10 --fake      # Version 8
-mdmi-cli load-preset tests/data/sample_v9.dmp --program 11 --fake   # Version 9
-mdmi-cli load-preset tests/data/sample_new.dmp --program 12 --fake  # Version 11
+mdmi load-preset tests/data/sample.dmp --program 10 --fake      # Version 8
+mdmi load-preset tests/data/sample_v9.dmp --program 11 --fake   # Version 9
+mdmi load-preset tests/data/sample_new.dmp --program 12 --fake  # Version 11
 
 # Explore WOPN contents
-mdmi-cli list-wopn tests/data/sample.wopn
+mdmi list-wopn tests/data/sample.wopn
 
 # Load specific WOPN instruments
-mdmi-cli load-preset tests/data/sample.wopn --program 20 --bank 0 --instrument 0 --bank-type melody --fake
-mdmi-cli load-preset tests/data/sample.wopn --program 25 --bank 0 --instrument 35 --bank-type percussion --fake
+mdmi load-preset tests/data/sample.wopn --program 20 --bank 0 --instrument 0 --bank-type melody --fake
+mdmi load-preset tests/data/sample.wopn --program 25 --bank 0 --instrument 35 --bank-type percussion --fake
 ```
 
 ## Dependencies
