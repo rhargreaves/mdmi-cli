@@ -1,19 +1,13 @@
 """Clear all presets command for MDMI CLI."""
 
 import click
-import os
 
 from mdmi.sysex_generator import SysExGenerator
-from mdmi.midi_interface import MIDIInterface, FakeMIDIInterface
+from .common import midi_options, get_midi_interface
 
 
 @click.command()
-@click.option(
-    "--port",
-    default=lambda: os.environ.get("MDMI_MIDI_PORT"),
-    help="MIDI output port name (default: MDMI_MIDI_PORT env var)",
-)
-@click.option("--fake", is_flag=True, help="Use fake MIDI interface for testing")
+@midi_options
 @click.option("--confirm", is_flag=True, help="Skip confirmation prompt")
 def clear_all_presets(port, fake, confirm):
     """Clear all user presets."""
@@ -25,11 +19,7 @@ def clear_all_presets(port, fake, confirm):
         generator = SysExGenerator()
         sysex_data = generator.generate_clear_all_presets()
 
-        if fake:
-            interface = FakeMIDIInterface()
-        else:
-            interface = MIDIInterface(port)
-
+        interface = get_midi_interface(port, fake)
         interface.send_sysex(sysex_data)
         click.echo("Successfully cleared all presets")
 

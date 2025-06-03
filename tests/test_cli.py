@@ -78,7 +78,7 @@ class TestCLI:
 
     @patch("mdmi.commands.load_preset.Path.read_bytes")
     @patch("mdmi.commands.load_preset.detect_preset_format")
-    @patch("mdmi.commands.load_preset.FakeMIDIInterface")
+    @patch("mdmi.commands.common.FakeMIDIInterface")
     def test_load_preset_tfi_fake_interface(self, mock_fake_midi, mock_detect, mock_read):
         """Test loading TFI preset with fake interface."""
         # Setup mocks
@@ -96,7 +96,7 @@ class TestCLI:
 
     @patch("mdmi.commands.load_preset.Path.read_bytes")
     @patch("mdmi.commands.load_preset.detect_preset_format")
-    @patch("mdmi.commands.load_preset.FakeMIDIInterface")
+    @patch("mdmi.commands.common.FakeMIDIInterface")
     def test_load_preset_with_env_port(self, mock_fake_midi, mock_detect, mock_read):
         """Test loading preset using MDMI_MIDI_PORT environment variable."""
         # Setup mocks
@@ -119,7 +119,7 @@ class TestCLI:
     @patch("mdmi.commands.load_preset.Path.read_bytes")
     @patch("mdmi.commands.load_preset.detect_preset_format")
     @patch("mido.get_output_names")
-    @patch("mdmi.commands.load_preset.MIDIInterface")
+    @patch("mdmi.commands.common.MIDIInterface")
     def test_load_preset_real_interface(self, mock_midi, mock_ports, mock_detect, mock_read):
         """Test loading preset with real MIDI interface."""
         # Setup mocks
@@ -167,7 +167,7 @@ class TestCLI:
         assert "Clear a specific user preset" in result.output
         assert "MDMI_MIDI_PORT" in result.output
 
-    @patch("mdmi.commands.clear_preset.FakeMIDIInterface")
+    @patch("mdmi.commands.common.FakeMIDIInterface")
     def test_clear_preset_fake_interface(self, mock_fake_midi):
         """Test clearing preset with fake interface."""
         mock_interface = Mock()
@@ -180,7 +180,7 @@ class TestCLI:
         assert "Successfully cleared preset 5" in result.output
         mock_interface.send_sysex.assert_called_once()
 
-    @patch("mdmi.commands.clear_preset.FakeMIDIInterface")
+    @patch("mdmi.commands.common.FakeMIDIInterface")
     def test_clear_preset_with_env_port(self, mock_fake_midi):
         """Test clearing preset using MDMI_MIDI_PORT environment variable."""
         mock_interface = Mock()
@@ -213,7 +213,7 @@ class TestCLI:
         assert "Clear all user presets" in result.output
         assert "MDMI_MIDI_PORT" in result.output
 
-    @patch("mdmi.commands.clear_all_presets.FakeMIDIInterface")
+    @patch("mdmi.commands.common.FakeMIDIInterface")
     def test_clear_all_presets_with_confirm(self, mock_fake_midi):
         """Test clearing all presets with --confirm flag."""
         mock_interface = Mock()
@@ -226,7 +226,7 @@ class TestCLI:
         assert "Successfully cleared all presets" in result.output
         mock_interface.send_sysex.assert_called_once()
 
-    @patch("mdmi.commands.clear_all_presets.FakeMIDIInterface")
+    @patch("mdmi.commands.common.FakeMIDIInterface")
     def test_clear_all_presets_with_env_port(self, mock_fake_midi):
         """Test clearing all presets using MDMI_MIDI_PORT environment variable."""
         mock_interface = Mock()
@@ -242,7 +242,7 @@ class TestCLI:
         assert "Successfully cleared all presets" in result.output
         mock_interface.send_sysex.assert_called_once()
 
-    @patch("mdmi.commands.clear_all_presets.FakeMIDIInterface")
+    @patch("mdmi.commands.common.FakeMIDIInterface")
     def test_clear_all_presets_with_user_confirmation(self, mock_fake_midi):
         """Test clearing all presets with user confirmation."""
         mock_interface = Mock()
@@ -255,7 +255,7 @@ class TestCLI:
         assert "Successfully cleared all presets" in result.output
         mock_interface.send_sysex.assert_called_once()
 
-    @patch("mdmi.commands.clear_all_presets.FakeMIDIInterface")
+    @patch("mdmi.commands.common.FakeMIDIInterface")
     def test_clear_all_presets_user_aborts(self, mock_fake_midi):
         """Test clearing all presets when user aborts."""
         mock_interface = Mock()
