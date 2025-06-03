@@ -57,56 +57,51 @@ class TestCLI:
         result = runner.invoke(main, ["load-preset"])
 
         assert result.exit_code != 0
-        assert "PRESET_FILE is required" in result.output
+        assert "Missing argument" in result.output
 
     def test_load_preset_without_program_shows_error(self):
         """Test that load-preset without program shows proper error."""
         runner = CliRunner()
-        result = runner.invoke(main, ["load-preset", "test.tfi"])
+        # Use a file that actually exists in our test data
+        result = runner.invoke(main, ["load-preset", "tests/data/sample.tfi"])
 
         assert result.exit_code != 0
-        assert "--program is required" in result.output
+        assert "Missing option" in result.output
 
-    @patch("mdmi.cli.Path.exists")
-    def test_load_preset_file_not_found(self, mock_exists):
+    def test_load_preset_file_not_found(self):
         """Test load-preset with non-existent file."""
-        mock_exists.return_value = False
-
         runner = CliRunner()
         result = runner.invoke(main, ["load-preset", "nonexistent.tfi", "--program", "0"])
 
         assert result.exit_code != 0
         assert "does not exist" in result.output
 
-    @patch("mdmi.cli.Path.exists")
     @patch("mdmi.cli.Path.read_bytes")
     @patch("mdmi.cli.detect_preset_format")
     @patch("mdmi.cli.FakeMIDIInterface")
-    def test_load_preset_tfi_fake_interface(self, mock_fake_midi, mock_detect, mock_read, mock_exists):
+    def test_load_preset_tfi_fake_interface(self, mock_fake_midi, mock_detect, mock_read):
         """Test loading TFI preset with fake interface."""
         # Setup mocks
-        mock_exists.return_value = True
         mock_read.return_value = b"\x00" * 42  # Valid TFI data
         mock_detect.return_value = "TFI"
         mock_interface = Mock()
         mock_fake_midi.return_value = mock_interface
 
         runner = CliRunner()
-        result = runner.invoke(main, ["load-preset", "test.tfi", "--program", "0", "--fake"])
+        # Use a file that actually exists in our test data
+        result = runner.invoke(main, ["load-preset", "tests/data/sample.tfi", "--program", "0", "--fake"])
 
         assert result.exit_code == 0
         assert "Successfully loaded" in result.output
         mock_interface.send_sysex.assert_called_once()
 
-    @patch("mdmi.cli.Path.exists")
     @patch("mdmi.cli.Path.read_bytes")
     @patch("mdmi.cli.detect_preset_format")
     @patch("mido.get_output_names")
     @patch("mdmi.cli.MIDIInterface")
-    def test_load_preset_real_interface(self, mock_midi, mock_ports, mock_detect, mock_read, mock_exists):
+    def test_load_preset_real_interface(self, mock_midi, mock_ports, mock_detect, mock_read):
         """Test loading preset with real MIDI interface."""
         # Setup mocks
-        mock_exists.return_value = True
         mock_read.return_value = b"\x00" * 42
         mock_detect.return_value = "TFI"
         mock_ports.return_value = ["Test Port"]
@@ -114,7 +109,8 @@ class TestCLI:
         mock_midi.return_value = mock_interface
 
         runner = CliRunner()
-        args = ["load-preset", "test.tfi", "--program", "0", "--port", "Test Port"]
+        # Use a file that actually exists in our test data
+        args = ["load-preset", "tests/data/sample.tfi", "--program", "0", "--port", "Test Port"]
         result = runner.invoke(main, args)
 
         assert result.exit_code == 0
@@ -129,17 +125,16 @@ class TestCLI:
         assert result.exit_code != 0
         assert "Invalid value for" in result.output
 
-    @patch("mdmi.cli.Path.exists")
     @patch("mdmi.cli.Path.read_bytes")
     @patch("mdmi.cli.detect_preset_format")
-    def test_load_preset_unsupported_format(self, mock_detect, mock_read, mock_exists):
+    def test_load_preset_unsupported_format(self, mock_detect, mock_read):
         """Test load-preset with unsupported format."""
-        mock_exists.return_value = True
         mock_read.return_value = b"invalid"
         mock_detect.return_value = "UNKNOWN"
 
         runner = CliRunner()
-        result = runner.invoke(main, ["load-preset", "test.unknown", "--program", "0", "--fake"])
+        # Use a file that actually exists in our test data
+        result = runner.invoke(main, ["load-preset", "tests/data/sample.tfi", "--program", "0", "--fake"])
 
         assert result.exit_code != 0
         assert "Unsupported" in result.output

@@ -16,10 +16,11 @@ def main():
 
 
 @main.command()
-@click.argument("preset_file", required=False)
+@click.argument("preset_file", type=click.Path(exists=True))
 @click.option(
     "--program",
     type=click.IntRange(0, 127),
+    required=True,
     help="MIDI program number to store preset under (0-127)",
 )
 @click.option("--port", help="MIDI output port name")
@@ -34,20 +35,8 @@ def main():
 )
 def load_preset(preset_file, program, port, fake, bank, instrument, bank_type):
     """Load a preset file to MDMI."""
-    if not preset_file:
-        click.echo("Error: PRESET_FILE is required")
-        raise click.Abort()
-
-    if program is None:
-        click.echo("Error: --program is required")
-        raise click.Abort()
-
-    preset_path = Path(preset_file)
-    if not preset_path.exists():
-        click.echo(f"Error: File {preset_file} does not exist")
-        raise click.Abort()
-
     try:
+        preset_path = Path(preset_file)
         data = preset_path.read_bytes()
         format_type = detect_preset_format(data)
 
