@@ -3,7 +3,6 @@
 from unittest.mock import Mock, patch
 from click.testing import CliRunner
 import io
-import sys
 from contextlib import redirect_stdout
 
 from mdmi.cli import main

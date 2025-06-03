@@ -62,14 +62,14 @@ def ping(midi_out, midi_in, fake, timeout, no_response):
         if pong_response != expected_pong:
             hex_response = " ".join(f"{b:02X}" for b in pong_response)
             click.echo(f"❌ Unexpected response: {hex_response}")
-            click.echo(f"Expected pong: F0 00 22 77 02 F7")
+            click.echo("Expected pong: F0 00 22 77 02 F7")
             raise click.Abort()
 
         # Calculate round-trip time
         round_trip_ms = (end_time - start_time) * 1000
 
         # Success!
-        click.echo(f"✅ Pong received!")
+        click.echo("✅ Pong received!")
         click.echo(f"Round-trip latency: {round_trip_ms:.2f} ms")
 
         # Provide interpretation of the latency
