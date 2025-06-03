@@ -61,6 +61,10 @@ class FakeMIDIInterface:
         Args:
             data: Complete SysEx message including F0/F7
         """
+        # Print the SysEx message for debugging
+        hex_data = " ".join(f"{b:02X}" for b in data)
+        print(f"FakeMIDIInterface: Sending SysEx ({len(data)} bytes): {hex_data}")
+
         self.sent_messages.append(data)
 
     def get_last_sysex(self) -> Optional[bytes]:

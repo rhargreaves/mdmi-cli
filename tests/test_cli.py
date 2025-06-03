@@ -2,6 +2,9 @@
 
 from unittest.mock import Mock, patch
 from click.testing import CliRunner
+import io
+import sys
+from contextlib import redirect_stdout
 
 from mdmi.cli import main
 
@@ -308,3 +311,28 @@ class TestCLI:
         assert "List contents of a WOPN file" in result.output
         assert "--full" in result.output
         assert "Show all instruments" in result.output
+
+    def test_fake_interface_debug_output(self):
+        """Test that FakeMIDIInterface prints SysEx debug information."""
+        from mdmi.midi_interface import FakeMIDIInterface
+
+        # Create a fake interface
+        fake_interface = FakeMIDIInterface()
+
+        # Capture stdout
+        captured_output = io.StringIO()
+        with redirect_stdout(captured_output):
+            # Send a test SysEx message
+            test_sysex = bytes([0xF0, 0x00, 0x22, 0x77, 0x0A, 0x00, 0x2A, 0xF7])  # Program 42 (0x2A)
+            fake_interface.send_sysex(test_sysex)
+
+        # Get the captured output
+        output = captured_output.getvalue()
+
+        # Verify debug output format
+        assert "FakeMIDIInterface: Sending SysEx" in output
+        assert "8 bytes" in output  # Our test message is 8 bytes
+        assert "F0 00 22 77 0A 00 2A F7" in output
+
+        # Verify the message was also stored
+        assert fake_interface.get_last_sysex() == test_sysex
