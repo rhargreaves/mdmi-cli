@@ -21,10 +21,7 @@ class MIDIInterface:
         # Check if port exists
         available_ports = mido.get_output_names()
         if port_name not in available_ports:
-            raise ValueError(
-                f"MIDI port '{port_name}' not found. "
-                f"Available ports: {available_ports}"
-            )
+            raise ValueError(f"MIDI port '{port_name}' not found. Available ports: {available_ports}")
 
         self.port = mido.open_output(port_name)
 

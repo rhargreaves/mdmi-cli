@@ -1,15 +1,11 @@
 """Tests for preset parsers."""
 
 import pytest
-import tempfile
-import os
-from pathlib import Path
 
 from mdmi.preset_parsers import (
     detect_preset_format,
     parse_preset,
     list_wopn_contents,
-    PresetParseError,
     FMOperator,
 )
 
@@ -117,9 +113,7 @@ class TestFMOperator:
 
     def test_create_fm_operator(self):
         """Test creating FMOperator with all fields."""
-        op = FMOperator(
-            mul=1, dt1=2, ar=3, rs=4, d1r=5, am=6, d1l=7, d2r=8, rr=9, tl=10, ssg=11
-        )
+        op = FMOperator(mul=1, dt1=2, ar=3, rs=4, d1r=5, am=6, d1l=7, d2r=8, rr=9, tl=10, ssg=11)
 
         assert op.mul == 1
         assert op.dt1 == 2

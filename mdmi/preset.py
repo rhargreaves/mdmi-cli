@@ -20,5 +20,5 @@ class Preset:
         text += f"LFO AMS: {self.lfo_ams}\n"
         text += f"LFO FMS: {self.lfo_fms}\n"
         for i, op in enumerate(self.operators):
-            text += f"Operator {i+1}: {op}\n"
+            text += f"Operator {i + 1}: {op}\n"
         return text

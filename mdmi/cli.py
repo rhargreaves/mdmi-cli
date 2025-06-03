@@ -26,18 +26,14 @@ def main():
 @click.option("--fake", is_flag=True, help="Use fake MIDI interface for testing")
 @click.option("--list-ports", is_flag=True, help="List available MIDI ports")
 @click.option("--bank", type=int, default=0, help="WOPN bank index (default: 0)")
-@click.option(
-    "--instrument", type=int, default=0, help="WOPN instrument index (default: 0)"
-)
+@click.option("--instrument", type=int, default=0, help="WOPN instrument index (default: 0)")
 @click.option(
     "--bank-type",
     type=click.Choice(["melody", "percussion"]),
     default="melody",
     help="WOPN bank type (default: melody)",
 )
-def load_preset(
-    preset_file, program, port, fake, list_ports, bank, instrument, bank_type
-):
+def load_preset(preset_file, program, port, fake, list_ports, bank, instrument, bank_type):
     """Load a preset file to MDMI."""
     if list_ports:
         ports = mido.get_output_names()

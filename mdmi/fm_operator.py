@@ -4,9 +4,7 @@
 class FmOperator:
     """FM operator with YM2612 parameters."""
 
-    def __init__(
-        self, dt=0, mul=0, tl=0, rs=0, ar=0, am=0, dr=0, d2r=0, sl=0, rr=0, ssg=0
-    ):
+    def __init__(self, dt=0, mul=0, tl=0, rs=0, ar=0, am=0, dr=0, d2r=0, sl=0, rr=0, ssg=0):
         self.dt = dt
         self.mul = mul
         self.tl = tl
@@ -20,4 +18,7 @@ class FmOperator:
         self.ssg = ssg
 
     def __str__(self):
-        return f"DT:{self.dt} MUL:{self.mul} TL:{self.tl} RS:{self.rs} AR:{self.ar} AM:{self.am} DR:{self.dr} D2R:{self.d2r} SL:{self.sl} RR:{self.rr} SSG:{self.ssg}"
+        return (
+            f"DT:{self.dt} MUL:{self.mul} TL:{self.tl} RS:{self.rs} AR:{self.ar}"
+            + f"AM:{self.am} DR:{self.dr} D2R:{self.d2r} SL:{self.sl} RR:{self.rr} SSG:{self.ssg}"
+        )

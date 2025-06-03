@@ -23,7 +23,7 @@ def parse_tfi(filename):
 
 def parse_operator(f):
     d = unpack_dict(
-        'u8u8u8u8u8u8u8u8u8u8', ['mul', 'dt', 'tl', 'rs', 'ar', 'dr', 'd2r', 'rr', 'sl',
-                                 'ssg', 'am'], f.read(10))
-    d['am'] = 0
+        "u8u8u8u8u8u8u8u8u8u8", ["mul", "dt", "tl", "rs", "ar", "dr", "d2r", "rr", "sl", "ssg", "am"], f.read(10)
+    )
+    d["am"] = 0
     return FmOperator(**d)

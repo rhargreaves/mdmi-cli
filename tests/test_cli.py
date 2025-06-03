@@ -61,9 +61,7 @@ class TestCLI:
         mock_exists.return_value = False
 
         runner = CliRunner()
-        result = runner.invoke(
-            main, ["load-preset", "nonexistent.tfi", "--program", "0"]
-        )
+        result = runner.invoke(main, ["load-preset", "nonexistent.tfi", "--program", "0"])
 
         assert result.exit_code != 0
         assert "does not exist" in result.output
@@ -72,9 +70,7 @@ class TestCLI:
     @patch("mdmi.cli.Path.read_bytes")
     @patch("mdmi.cli.detect_preset_format")
     @patch("mdmi.cli.FakeMIDIInterface")
-    def test_load_preset_tfi_fake_interface(
-        self, mock_fake_midi, mock_detect, mock_read, mock_exists
-    ):
+    def test_load_preset_tfi_fake_interface(self, mock_fake_midi, mock_detect, mock_read, mock_exists):
         """Test loading TFI preset with fake interface."""
         # Setup mocks
         mock_exists.return_value = True
@@ -84,9 +80,7 @@ class TestCLI:
         mock_fake_midi.return_value = mock_interface
 
         runner = CliRunner()
-        result = runner.invoke(
-            main, ["load-preset", "test.tfi", "--program", "0", "--fake"]
-        )
+        result = runner.invoke(main, ["load-preset", "test.tfi", "--program", "0", "--fake"])
 
         assert result.exit_code == 0
         assert "Successfully loaded" in result.output
@@ -97,9 +91,7 @@ class TestCLI:
     @patch("mdmi.cli.detect_preset_format")
     @patch("mido.get_output_names")
     @patch("mdmi.cli.MIDIInterface")
-    def test_load_preset_real_interface(
-        self, mock_midi, mock_ports, mock_detect, mock_read, mock_exists
-    ):
+    def test_load_preset_real_interface(self, mock_midi, mock_ports, mock_detect, mock_read, mock_exists):
         """Test loading preset with real MIDI interface."""
         # Setup mocks
         mock_exists.return_value = True
@@ -135,9 +127,7 @@ class TestCLI:
         mock_detect.return_value = "UNKNOWN"
 
         runner = CliRunner()
-        result = runner.invoke(
-            main, ["load-preset", "test.unknown", "--program", "0", "--fake"]
-        )
+        result = runner.invoke(main, ["load-preset", "test.unknown", "--program", "0", "--fake"])
 
         assert result.exit_code != 0
         assert "Unsupported" in result.output

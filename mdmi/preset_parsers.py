@@ -2,7 +2,6 @@
 
 from dataclasses import dataclass
 from typing import List, Optional
-from pathlib import Path
 
 from .presets.wopn_parser import parse_wopn
 from .presets.dmp_parser import parse_dmp
@@ -112,9 +111,7 @@ def parse_preset(data: bytes, format_type: str, **kwargs) -> Preset:
 
             bank = banks[bank_index]
             if instrument_index >= len(bank.instruments):
-                raise PresetParseError(
-                    f"Instrument {instrument_index} not found in bank {bank_index}"
-                )
+                raise PresetParseError(f"Instrument {instrument_index} not found in bank {bank_index}")
 
             instrument = bank.instruments[instrument_index]
 
@@ -223,9 +220,7 @@ def list_wopn_contents(data: bytes) -> dict:
             bank_info = {"index": i, "name": bank.name, "instruments": []}
             for j, instrument in enumerate(bank.instruments):
                 if instrument.name.strip():  # Skip empty instruments
-                    bank_info["instruments"].append(
-                        {"index": j, "name": instrument.name}
-                    )
+                    bank_info["instruments"].append({"index": j, "name": instrument.name})
             contents["melody_banks"].append(bank_info)
 
         # List percussion banks
@@ -233,9 +228,7 @@ def list_wopn_contents(data: bytes) -> dict:
             bank_info = {"index": i, "name": bank.name, "instruments": []}
             for j, instrument in enumerate(bank.instruments):
                 if instrument.name.strip():  # Skip empty instruments
-                    bank_info["instruments"].append(
-                        {"index": j, "name": instrument.name}
-                    )
+                    bank_info["instruments"].append({"index": j, "name": instrument.name})
             contents["percussion_banks"].append(bank_info)
 
         return contents

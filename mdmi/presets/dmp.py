@@ -10,7 +10,7 @@ class Dmp(Preset):
         self.name = name
 
     def info(self):
-        text = self.dmp_type() + '\n'
+        text = self.dmp_type() + "\n"
         text = text + super(Dmp, self).info()
         return text
 
@@ -25,4 +25,5 @@ class Dmp(Preset):
             "Version",
             self.version,
             self.format_instrument_mode(self.instrument_mode),
-            self.format_system(self.system_type))
+            self.format_system(self.system_type),
+        )

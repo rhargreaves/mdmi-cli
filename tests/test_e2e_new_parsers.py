@@ -1,9 +1,6 @@
 """End-to-end tests with new parser structure."""
 
 import pytest
-import tempfile
-import os
-from pathlib import Path
 
 from mdmi.preset_parsers import detect_preset_format, parse_preset
 from mdmi.sysex_generator import SysExGenerator
