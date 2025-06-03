@@ -22,7 +22,7 @@ class TestRealData:
         # Test parsing
         preset = parse_preset(data, "TFI")
         assert preset.format_type == "TFI"
-        assert preset.name.startswith("tmp")  # Name comes from temp filename
+        assert preset.name == "tfi_data"  # Name comes from BytesIO approach
         assert len(preset.operators) == 4
 
         # Test SysEx generation
@@ -54,7 +54,7 @@ class TestRealData:
         # Test parsing
         preset = parse_preset(data, "DMP")
         assert preset.format_type == "DMP"
-        assert preset.name.startswith("tmp")  # Name comes from temp filename
+        assert preset.name == "dmp_data"  # Name comes from BytesIO approach
 
         # Test SysEx generation
         generator = SysExGenerator()
@@ -79,7 +79,7 @@ class TestRealData:
         # Test parsing
         preset = parse_preset(data, "DMP")
         assert preset.format_type == "DMP"
-        assert preset.name.startswith("tmp")  # Name comes from temp filename
+        assert preset.name == "dmp_data"  # Name comes from BytesIO approach
 
     def test_dmp_real_data_new(self):
         """Test with real new DMP data."""
@@ -92,7 +92,7 @@ class TestRealData:
         # Test parsing
         preset = parse_preset(data, "DMP")
         assert preset.format_type == "DMP"
-        assert preset.name.startswith("tmp")  # Name comes from temp filename
+        assert preset.name == "dmp_data"  # Name comes from BytesIO approach
 
     def test_wopn_real_data(self):
         """Test with real WOPN data."""

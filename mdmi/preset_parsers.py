@@ -2,6 +2,7 @@
 
 from dataclasses import dataclass
 from typing import List, Optional
+import io
 
 from .presets.wopn_parser import parse_wopn
 from .presets.dmp_parser import parse_dmp
@@ -92,151 +93,110 @@ def _convert_fm_operator(fm_op) -> FMOperator:
 def parse_preset(data: bytes, format_type: str, **kwargs) -> Preset:
     """Parse preset data using the appropriate parser."""
     if format_type == "WOPN":
-        # For WOPN, we need to write to temp file for file-based parser
-        import tempfile
+        # Use BytesIO instead of temporary file
+        file_obj = io.BytesIO(data)
+        wopn = parse_wopn(file_obj, name="wopn_data")
 
-        with tempfile.NamedTemporaryFile(suffix=".wopn", delete=False) as f:
-            f.write(data)
-            temp_filename = f.name
+        # Extract specific instrument if requested
+        bank_index = kwargs.get("bank", 0)
+        instrument_index = kwargs.get("instrument", 0)
+        bank_type = kwargs.get("bank_type", "melody")  # 'melody' or 'percussion'
 
-        try:
-            wopn = parse_wopn(temp_filename)
+        banks = wopn.m_banks if bank_type == "melody" else wopn.p_banks
 
-            # Extract specific instrument if requested
-            bank_index = kwargs.get("bank", 0)
-            instrument_index = kwargs.get("instrument", 0)
-            bank_type = kwargs.get("bank_type", "melody")  # 'melody' or 'percussion'
+        if bank_index >= len(banks):
+            raise PresetParseError(f"Bank {bank_index} not found")
 
-            banks = wopn.m_banks if bank_type == "melody" else wopn.p_banks
+        bank = banks[bank_index]
+        if instrument_index >= len(bank.instruments):
+            raise PresetParseError(f"Instrument {instrument_index} not found in bank {bank_index}")
 
-            if bank_index >= len(banks):
-                raise PresetParseError(f"Bank {bank_index} not found")
+        instrument = bank.instruments[instrument_index]
 
-            bank = banks[bank_index]
-            if instrument_index >= len(bank.instruments):
-                raise PresetParseError(f"Instrument {instrument_index} not found in bank {bank_index}")
+        # Convert to MDMI format
+        operators = [_convert_fm_operator(op) for op in instrument.operators]
 
-            instrument = bank.instruments[instrument_index]
-
-            # Convert to MDMI format
-            operators = [_convert_fm_operator(op) for op in instrument.operators]
-
-            preset = Preset(
-                format_type="WOPN",
-                name=instrument.name,
-                algorithm=instrument.algorithm,
-                feedback=instrument.feedback,
-                lfo_ams=instrument.lfo_ams,
-                lfo_fms=instrument.lfo_fms,
-                operators=operators,
-                melody_banks=len(wopn.m_banks),
-                percussion_banks=len(wopn.p_banks),
-            )
-            return preset
-
-        finally:
-            import os
-
-            os.unlink(temp_filename)
+        preset = Preset(
+            format_type="WOPN",
+            name=instrument.name,
+            algorithm=instrument.algorithm,
+            feedback=instrument.feedback,
+            lfo_ams=instrument.lfo_ams,
+            lfo_fms=instrument.lfo_fms,
+            operators=operators,
+            melody_banks=len(wopn.m_banks),
+            percussion_banks=len(wopn.p_banks),
+        )
+        return preset
 
     elif format_type == "DMP":
-        import tempfile
+        # Use BytesIO instead of temporary file
+        file_obj = io.BytesIO(data)
+        dmp = parse_dmp(file_obj, name="dmp_data")
 
-        with tempfile.NamedTemporaryFile(suffix=".dmp", delete=False) as f:
-            f.write(data)
-            temp_filename = f.name
+        # Convert operators if they exist
+        operators = []
+        if hasattr(dmp, "operators") and dmp.operators:
+            operators = [_convert_fm_operator(op) for op in dmp.operators]
 
-        try:
-            dmp = parse_dmp(temp_filename)
-
-            # Convert operators if they exist
-            operators = []
-            if hasattr(dmp, "operators") and dmp.operators:
-                operators = [_convert_fm_operator(op) for op in dmp.operators]
-
-            preset = Preset(
-                format_type="DMP",
-                name=dmp.name,
-                version=getattr(dmp, "version", None),
-                algorithm=getattr(dmp, "algorithm", 0),
-                feedback=getattr(dmp, "feedback", 0),
-                lfo_ams=getattr(dmp, "lfo_ams", 0),
-                lfo_fms=getattr(dmp, "lfo_fms", 0),
-                operators=operators,
-                system=getattr(dmp, "system_type", None),
-            )
-            return preset
-
-        finally:
-            import os
-
-            os.unlink(temp_filename)
+        preset = Preset(
+            format_type="DMP",
+            name=dmp.name,
+            version=getattr(dmp, "version", None),
+            algorithm=getattr(dmp, "algorithm", 0),
+            feedback=getattr(dmp, "feedback", 0),
+            lfo_ams=getattr(dmp, "lfo_ams", 0),
+            lfo_fms=getattr(dmp, "lfo_fms", 0),
+            operators=operators,
+            system=getattr(dmp, "system_type", None),
+        )
+        return preset
 
     elif format_type == "TFI":
-        import tempfile
+        # Use BytesIO instead of temporary file
+        file_obj = io.BytesIO(data)
+        tfi = parse_tfi(file_obj, name="tfi_data")
 
-        with tempfile.NamedTemporaryFile(suffix=".tfi", delete=False) as f:
-            f.write(data)
-            temp_filename = f.name
+        # Convert operators
+        operators = [_convert_fm_operator(op) for op in tfi.operators]
 
-        try:
-            tfi = parse_tfi(temp_filename)
-
-            # Convert operators
-            operators = [_convert_fm_operator(op) for op in tfi.operators]
-
-            preset = Preset(
-                format_type="TFI",
-                name=tfi.name,
-                algorithm=tfi.algorithm,
-                feedback=tfi.feedback,
-                lfo_ams=getattr(tfi, "lfo_ams", 0),
-                lfo_fms=getattr(tfi, "lfo_fms", 0),
-                operators=operators,
-                fm_parameters=data,
-            )
-            return preset
-
-        finally:
-            import os
-
-            os.unlink(temp_filename)
+        preset = Preset(
+            format_type="TFI",
+            name=tfi.name,
+            algorithm=tfi.algorithm,
+            feedback=tfi.feedback,
+            lfo_ams=getattr(tfi, "lfo_ams", 0),
+            lfo_fms=getattr(tfi, "lfo_fms", 0),
+            operators=operators,
+            fm_parameters=data,
+        )
+        return preset
     else:
         raise PresetParseError(f"Unsupported format: {format_type}")
 
 
 def list_wopn_contents(data: bytes) -> dict:
     """List WOPN bank and instrument contents for selection."""
-    import tempfile
+    # Use BytesIO instead of temporary file
+    file_obj = io.BytesIO(data)
+    wopn = parse_wopn(file_obj, name="wopn_data")
 
-    with tempfile.NamedTemporaryFile(suffix=".wopn", delete=False) as f:
-        f.write(data)
-        temp_filename = f.name
+    contents = {"melody_banks": [], "percussion_banks": []}
 
-    try:
-        wopn = parse_wopn(temp_filename)
+    # List melody banks
+    for i, bank in enumerate(wopn.m_banks):
+        bank_info = {"index": i, "name": bank.name, "instruments": []}
+        for j, instrument in enumerate(bank.instruments):
+            if instrument.name.strip():  # Skip empty instruments
+                bank_info["instruments"].append({"index": j, "name": instrument.name})
+        contents["melody_banks"].append(bank_info)
 
-        contents = {"melody_banks": [], "percussion_banks": []}
+    # List percussion banks
+    for i, bank in enumerate(wopn.p_banks):
+        bank_info = {"index": i, "name": bank.name, "instruments": []}
+        for j, instrument in enumerate(bank.instruments):
+            if instrument.name.strip():  # Skip empty instruments
+                bank_info["instruments"].append({"index": j, "name": instrument.name})
+        contents["percussion_banks"].append(bank_info)
 
-        # List melody banks
-        for i, bank in enumerate(wopn.m_banks):
-            bank_info = {"index": i, "name": bank.name, "instruments": []}
-            for j, instrument in enumerate(bank.instruments):
-                if instrument.name.strip():  # Skip empty instruments
-                    bank_info["instruments"].append({"index": j, "name": instrument.name})
-            contents["melody_banks"].append(bank_info)
-
-        # List percussion banks
-        for i, bank in enumerate(wopn.p_banks):
-            bank_info = {"index": i, "name": bank.name, "instruments": []}
-            for j, instrument in enumerate(bank.instruments):
-                if instrument.name.strip():  # Skip empty instruments
-                    bank_info["instruments"].append({"index": j, "name": instrument.name})
-            contents["percussion_banks"].append(bank_info)
-
-        return contents
-
-    finally:
-        import os
-
-        os.unlink(temp_filename)
+    return contents

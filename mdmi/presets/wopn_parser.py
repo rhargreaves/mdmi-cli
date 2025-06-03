@@ -5,25 +5,25 @@ from .wopn_bank import WopnBank
 from .wopn_instrument import WopnInstrument
 
 
-def parse_wopn(filename):
+def parse_wopn(file_obj, name="wopn_data"):
+    """Parse WOPN data from a file-like object."""
     p = Wopn()
-    with open(filename, "rb") as f:
-        p.name = filename
-        p.magic_number = unpack("t80p8", f.read(11))[0]
-        if p.magic_number == "WOPN2-B2NK":
-            p.version = unpack("u16<", f.read(2))[0]
-        else:
-            p.version = 1
-        p.m_bank_count, p.p_bank_count, p.lfo_enable, p.lfo_freq = unpack("u16u16p4b1u3", f.read(5))
-        if p.version >= 2:
-            p.m_banks = read_banks(p.m_bank_count, f)
-            p.p_banks = read_banks(p.p_bank_count, f)
-        for bank in p.m_banks:
-            for _ in range(128):
-                bank.instruments.append(read_instrument(f))
-        for bank in p.p_banks:
-            for _ in range(128):
-                bank.instruments.append(read_instrument(f))
+    p.name = name
+    p.magic_number = unpack("t80p8", file_obj.read(11))[0]
+    if p.magic_number == "WOPN2-B2NK":
+        p.version = unpack("u16<", file_obj.read(2))[0]
+    else:
+        p.version = 1
+    p.m_bank_count, p.p_bank_count, p.lfo_enable, p.lfo_freq = unpack("u16u16p4b1u3", file_obj.read(5))
+    if p.version >= 2:
+        p.m_banks = read_banks(p.m_bank_count, file_obj)
+        p.p_banks = read_banks(p.p_bank_count, file_obj)
+    for bank in p.m_banks:
+        for _ in range(128):
+            bank.instruments.append(read_instrument(file_obj))
+    for bank in p.p_banks:
+        for _ in range(128):
+            bank.instruments.append(read_instrument(file_obj))
     return p
 
 
