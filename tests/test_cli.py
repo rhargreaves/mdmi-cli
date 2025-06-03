@@ -1,5 +1,6 @@
 """Tests for CLI."""
 
+import os
 from unittest.mock import Mock, patch
 from click.testing import CliRunner
 
@@ -24,6 +25,7 @@ class TestCLI:
 
         assert result.exit_code == 0
         assert "Load a preset file to MDMI" in result.output
+        assert "MDMI_MIDI_PORT" in result.output
 
     @patch("mido.get_output_names")
     def test_list_ports_without_preset_file(self, mock_get_ports):
@@ -97,6 +99,28 @@ class TestCLI:
 
     @patch("mdmi.cli.Path.read_bytes")
     @patch("mdmi.cli.detect_preset_format")
+    @patch("mdmi.cli.FakeMIDIInterface")
+    def test_load_preset_with_env_port(self, mock_fake_midi, mock_detect, mock_read):
+        """Test loading preset using MDMI_MIDI_PORT environment variable."""
+        # Setup mocks
+        mock_read.return_value = b"\x00" * 42  # Valid TFI data
+        mock_detect.return_value = "TFI"
+        mock_interface = Mock()
+        mock_fake_midi.return_value = mock_interface
+
+        # Set environment variable
+        env = {"MDMI_MIDI_PORT": "Env Test Port"}
+        runner = CliRunner(env=env)
+
+        # Don't specify --port, should use environment variable
+        result = runner.invoke(main, ["load-preset", "tests/data/sample.tfi", "--program", "0", "--fake"])
+
+        assert result.exit_code == 0
+        assert "Successfully loaded" in result.output
+        mock_interface.send_sysex.assert_called_once()
+
+    @patch("mdmi.cli.Path.read_bytes")
+    @patch("mdmi.cli.detect_preset_format")
     @patch("mido.get_output_names")
     @patch("mdmi.cli.MIDIInterface")
     def test_load_preset_real_interface(self, mock_midi, mock_ports, mock_detect, mock_read):
@@ -146,6 +170,7 @@ class TestCLI:
 
         assert result.exit_code == 0
         assert "Clear a specific user preset" in result.output
+        assert "MDMI_MIDI_PORT" in result.output
 
     @patch("mdmi.cli.FakeMIDIInterface")
     def test_clear_preset_fake_interface(self, mock_fake_midi):
@@ -154,6 +179,22 @@ class TestCLI:
         mock_fake_midi.return_value = mock_interface
 
         runner = CliRunner()
+        result = runner.invoke(main, ["clear-preset", "--program", "5", "--fake"])
+
+        assert result.exit_code == 0
+        assert "Successfully cleared preset 5" in result.output
+        mock_interface.send_sysex.assert_called_once()
+
+    @patch("mdmi.cli.FakeMIDIInterface")
+    def test_clear_preset_with_env_port(self, mock_fake_midi):
+        """Test clearing preset using MDMI_MIDI_PORT environment variable."""
+        mock_interface = Mock()
+        mock_fake_midi.return_value = mock_interface
+
+        # Set environment variable
+        env = {"MDMI_MIDI_PORT": "Env Test Port"}
+        runner = CliRunner(env=env)
+
         result = runner.invoke(main, ["clear-preset", "--program", "5", "--fake"])
 
         assert result.exit_code == 0
@@ -175,6 +216,7 @@ class TestCLI:
 
         assert result.exit_code == 0
         assert "Clear all user presets" in result.output
+        assert "MDMI_MIDI_PORT" in result.output
 
     @patch("mdmi.cli.FakeMIDIInterface")
     def test_clear_all_presets_with_confirm(self, mock_fake_midi):
@@ -183,6 +225,22 @@ class TestCLI:
         mock_fake_midi.return_value = mock_interface
 
         runner = CliRunner()
+        result = runner.invoke(main, ["clear-all-presets", "--fake", "--confirm"])
+
+        assert result.exit_code == 0
+        assert "Successfully cleared all presets" in result.output
+        mock_interface.send_sysex.assert_called_once()
+
+    @patch("mdmi.cli.FakeMIDIInterface")
+    def test_clear_all_presets_with_env_port(self, mock_fake_midi):
+        """Test clearing all presets using MDMI_MIDI_PORT environment variable."""
+        mock_interface = Mock()
+        mock_fake_midi.return_value = mock_interface
+
+        # Set environment variable
+        env = {"MDMI_MIDI_PORT": "Env Test Port"}
+        runner = CliRunner(env=env)
+
         result = runner.invoke(main, ["clear-all-presets", "--fake", "--confirm"])
 
         assert result.exit_code == 0

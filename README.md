@@ -7,12 +7,13 @@ Python CLI for controlling the Mega Drive MIDI Interface (MDMI). Supports loadin
 - **Multi-format preset support**: Load presets in WOPN, DMP, and TFI formats to MDMI user presets (programs 0-127)
 - **Advanced WOPN support**: Choose specific bank, instrument, and bank type (melody/percussion) from WOPN files
 - **Intelligent format detection**: Automatic detection of preset formats based on file headers and structure
+- **Environment variable support**: Set `MDMI_MIDI_PORT` once to avoid specifying `--port` repeatedly
 - **Preset management**: Clear individual user presets or all presets at once
 - **WOPN browsing**: List WOPN file contents to explore available banks and instruments
-- **Flexible MIDI support**: Works with both real MIDI hardware and fake interface for testing
+- **Hardware MIDI support**: Works with MIDI hardware for real-time preset loading
 - **Comprehensive testing**: Full test coverage including real-world data validation
 
-## Installation (from PyPi)
+## Installation (from PyPI)
 
 ```bash
 pip install mdmi-cli
@@ -33,13 +34,34 @@ pip install -r requirements.txt
 
 ## Usage
 
+### Environment Variable Setup (Optional)
+
+Set the `MDMI_MIDI_PORT` environment variable to avoid specifying `--port` in every command:
+
+```bash
+# Set for current session
+export MDMI_MIDI_PORT="USB MIDI Interface"
+
+# Or add to your shell profile (~/.bashrc, ~/.zshrc, etc.)
+echo 'export MDMI_MIDI_PORT="USB MIDI Interface"' >> ~/.bashrc
+```
+
+With the environment variable set, you can omit `--port` from all commands:
+
+```bash
+# These commands will automatically use MDMI_MIDI_PORT
+mdmi load-preset example.tfi --program 0
+mdmi clear-preset --program 5
+mdmi clear-all-presets --confirm
+```
+
 ### Load a preset
 
 ```bash
-# Load TFI preset to program 0
+# Load TFI preset to program 0 (uses MDMI_MIDI_PORT if set)
 mdmi load-preset example.tfi --program 0
 
-# Load DMP preset to program 5 via real MIDI port
+# Load DMP preset to program 5 via specific MIDI port
 mdmi load-preset example.dmp --program 5 --port "USB MIDI Interface"
 
 # Load specific WOPN instrument to program 10
@@ -65,15 +87,29 @@ mdmi load-preset soundbank.wopn --program 15 --bank 1 --instrument 65 --bank-typ
 ### Clear presets
 
 ```bash
-# Clear preset at program 5
+# Clear preset at program 5 (uses MDMI_MIDI_PORT if set)
 mdmi clear-preset --program 5
 
 # Clear all presets (with confirmation)
 mdmi clear-all-presets
 
-# Clear all presets (skip confirmation)
-mdmi clear-all-presets --confirm
+# Clear all presets (skip confirmation) with specific port
+mdmi clear-all-presets --confirm --port "My MIDI Device"
 ```
+
+## Configuration
+
+### Environment Variables
+
+- **`MDMI_MIDI_PORT`**: Default MIDI output port name
+  - Used automatically when `--port` is not specified
+  - Can be overridden by the `--port` option for individual commands
+  - Improves workflow efficiency when consistently using the same MIDI device
+
+### Command-line Options
+
+All commands support:
+- `--port TEXT`: MIDI output port name (overrides `MDMI_MIDI_PORT`)
 
 ## Supported Formats
 
@@ -105,13 +141,24 @@ mdmi clear-all-presets --confirm
 ```bash
 # Run all tests
 make test
+
+# Run specific test file
+pytest tests/test_cli.py -v
+
+# Run with coverage
+pytest --cov=mdmi tests/
 ```
+
 ## Dependencies
 
 - **click**: Command-line interface framework for robust CLI development
 - **mido**: MIDI library for hardware communication and SysEx handling
 - **bitstruct**: Binary data parsing library for efficient preset format parsing
+
+### Development Dependencies
 - **pytest**: Testing framework for comprehensive test coverage
+- **pytest-mock**: Mocking library for isolated testing
+- **ruff**: Fast Python linter and formatter
 
 ## License
 

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "mdmi-cli"
-version = "0.1.1"
+version = "0.2.0"
 description = "CLI tool for working with the Mega Drive MIDI Interface (MDMI)"
 authors = [{ name = "rhargreaves" }]
 requires-python = ">=3.10"

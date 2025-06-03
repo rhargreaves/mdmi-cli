@@ -1,6 +1,7 @@
 """CLI for Mega Drive MIDI Interface."""
 
 import click
+import os
 from pathlib import Path
 import mido
 
@@ -23,7 +24,11 @@ def main():
     required=True,
     help="MIDI program number to store preset under (0-127)",
 )
-@click.option("--port", help="MIDI output port name")
+@click.option(
+    "--port",
+    default=lambda: os.environ.get("MDMI_MIDI_PORT"),
+    help="MIDI output port name (default: MDMI_MIDI_PORT env var)",
+)
 @click.option("--fake", is_flag=True, help="Use fake MIDI interface for testing")
 @click.option("--bank", type=int, default=0, help="WOPN bank index (default: 0)")
 @click.option("--instrument", type=int, default=0, help="WOPN instrument index (default: 0)")
@@ -135,7 +140,11 @@ def list_wopn(wopn_file):
     required=True,
     help="MIDI program number to clear (0-127)",
 )
-@click.option("--port", help="MIDI output port name")
+@click.option(
+    "--port",
+    default=lambda: os.environ.get("MDMI_MIDI_PORT"),
+    help="MIDI output port name (default: MDMI_MIDI_PORT env var)",
+)
 @click.option("--fake", is_flag=True, help="Use fake MIDI interface for testing")
 def clear_preset(program, port, fake):
     """Clear a specific user preset."""
@@ -157,7 +166,11 @@ def clear_preset(program, port, fake):
 
 
 @main.command()
-@click.option("--port", help="MIDI output port name")
+@click.option(
+    "--port",
+    default=lambda: os.environ.get("MDMI_MIDI_PORT"),
+    help="MIDI output port name (default: MDMI_MIDI_PORT env var)",
+)
 @click.option("--fake", is_flag=True, help="Use fake MIDI interface for testing")
 @click.option("--confirm", is_flag=True, help="Skip confirmation prompt")
 def clear_all_presets(port, fake, confirm):
