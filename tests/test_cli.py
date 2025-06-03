@@ -47,13 +47,13 @@ class TestCLI:
         assert result.exit_code != 0
         assert "PRESET_FILE is required" in result.output
 
-    def test_load_preset_without_channel_shows_error(self):
-        """Test that load-preset without channel shows proper error."""
+    def test_load_preset_without_program_shows_error(self):
+        """Test that load-preset without program shows proper error."""
         runner = CliRunner()
         result = runner.invoke(main, ["load-preset", "test.tfi"])
 
         assert result.exit_code != 0
-        assert "--channel is required" in result.output
+        assert "--program is required" in result.output
 
     @patch("mdmi.cli.Path.exists")
     def test_load_preset_file_not_found(self, mock_exists):
@@ -62,7 +62,7 @@ class TestCLI:
 
         runner = CliRunner()
         result = runner.invoke(
-            main, ["load-preset", "nonexistent.tfi", "--channel", "0"]
+            main, ["load-preset", "nonexistent.tfi", "--program", "0"]
         )
 
         assert result.exit_code != 0
@@ -85,7 +85,7 @@ class TestCLI:
 
         runner = CliRunner()
         result = runner.invoke(
-            main, ["load-preset", "test.tfi", "--channel", "0", "--fake"]
+            main, ["load-preset", "test.tfi", "--program", "0", "--fake"]
         )
 
         assert result.exit_code == 0
@@ -110,17 +110,17 @@ class TestCLI:
         mock_midi.return_value = mock_interface
 
         runner = CliRunner()
-        result = runner.invoke(
-            main, ["load-preset", "test.tfi", "--channel", "0", "--port", "Test Port"]
-        )
+        args = ["load-preset", "test.tfi", "--program", "0", "--port", "Test Port"]
+        result = runner.invoke(main, args)
 
         assert result.exit_code == 0
         mock_interface.send_sysex.assert_called_once()
 
-    def test_load_preset_invalid_channel(self):
-        """Test load-preset with invalid channel."""
+    def test_load_preset_invalid_program(self):
+        """Test load-preset with invalid program."""
         runner = CliRunner()
-        result = runner.invoke(main, ["load-preset", "test.tfi", "--channel", "10"])
+        args = ["load-preset", "test.tfi", "--program", "128"]
+        result = runner.invoke(main, args)
 
         assert result.exit_code != 0
         assert "Invalid value for" in result.output
@@ -136,8 +136,83 @@ class TestCLI:
 
         runner = CliRunner()
         result = runner.invoke(
-            main, ["load-preset", "test.unknown", "--channel", "0", "--fake"]
+            main, ["load-preset", "test.unknown", "--program", "0", "--fake"]
         )
 
         assert result.exit_code != 0
         assert "Unsupported" in result.output
+
+    def test_clear_preset_help(self):
+        """Test clear-preset command help."""
+        runner = CliRunner()
+        result = runner.invoke(main, ["clear-preset", "--help"])
+
+        assert result.exit_code == 0
+        assert "Clear a specific user preset" in result.output
+
+    @patch("mdmi.cli.FakeMIDIInterface")
+    def test_clear_preset_fake_interface(self, mock_fake_midi):
+        """Test clearing preset with fake interface."""
+        mock_interface = Mock()
+        mock_fake_midi.return_value = mock_interface
+
+        runner = CliRunner()
+        result = runner.invoke(main, ["clear-preset", "--program", "5", "--fake"])
+
+        assert result.exit_code == 0
+        assert "Successfully cleared preset 5" in result.output
+        mock_interface.send_sysex.assert_called_once()
+
+    def test_clear_preset_without_program_shows_error(self):
+        """Test that clear-preset without program shows proper error."""
+        runner = CliRunner()
+        result = runner.invoke(main, ["clear-preset"])
+
+        assert result.exit_code != 0
+        assert "--program" in result.output
+
+    def test_clear_all_presets_help(self):
+        """Test clear-all-presets command help."""
+        runner = CliRunner()
+        result = runner.invoke(main, ["clear-all-presets", "--help"])
+
+        assert result.exit_code == 0
+        assert "Clear all user presets" in result.output
+
+    @patch("mdmi.cli.FakeMIDIInterface")
+    def test_clear_all_presets_with_confirm(self, mock_fake_midi):
+        """Test clearing all presets with --confirm flag."""
+        mock_interface = Mock()
+        mock_fake_midi.return_value = mock_interface
+
+        runner = CliRunner()
+        result = runner.invoke(main, ["clear-all-presets", "--fake", "--confirm"])
+
+        assert result.exit_code == 0
+        assert "Successfully cleared all presets" in result.output
+        mock_interface.send_sysex.assert_called_once()
+
+    @patch("mdmi.cli.FakeMIDIInterface")
+    def test_clear_all_presets_with_user_confirmation(self, mock_fake_midi):
+        """Test clearing all presets with user confirmation."""
+        mock_interface = Mock()
+        mock_fake_midi.return_value = mock_interface
+
+        runner = CliRunner()
+        result = runner.invoke(main, ["clear-all-presets", "--fake"], input="y\n")
+
+        assert result.exit_code == 0
+        assert "Successfully cleared all presets" in result.output
+        mock_interface.send_sysex.assert_called_once()
+
+    @patch("mdmi.cli.FakeMIDIInterface")
+    def test_clear_all_presets_user_aborts(self, mock_fake_midi):
+        """Test clearing all presets when user aborts."""
+        mock_interface = Mock()
+        mock_fake_midi.return_value = mock_interface
+
+        runner = CliRunner()
+        result = runner.invoke(main, ["clear-all-presets", "--fake"], input="n\n")
+
+        assert result.exit_code != 0
+        mock_interface.send_sysex.assert_not_called()

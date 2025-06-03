@@ -1,116 +1,103 @@
-"""SysEx generator for Mega Drive MIDI Interface preset loading."""
+"""SysEx generator for MDMI communication."""
 
-from typing import List
-from .preset_parsers import Preset
+from mdmi.preset_parsers import Preset
 
 
 class SysExGenerator:
-    """Generates SysEx messages for the Mega Drive MIDI Interface."""
+    """Generator for MDMI SysEx messages."""
 
-    # MDMI SysEx constants based on Mega Drive MIDI Interface spec
-    MANUFACTURER_ID = 0x43  # Yamaha manufacturer ID (YM2612 compatibility)
-    DEVICE_ID = 0x76  # MDMI device ID
-    PRESET_LOAD_CMD = 0x10  # Command for loading presets
+    MDMI_MANUFACTURER_ID = [0x00, 0x22, 0x77]
+    LOAD_PRESET_CMD = 0x0A
+    CLEAR_PRESET_CMD = 0x0B
+    CLEAR_ALL_CMD = 0x0C
+    FM_TYPE = 0x00
 
-    def generate_preset_load(self, preset: Preset, channel: int) -> bytes:
-        """Generate SysEx message to load preset to specified channel.
+    def generate_preset_load(self, preset: Preset, program: int) -> bytes:
+        """Generate SysEx message to load preset to program number.
 
         Args:
-            preset: The preset to load
-            channel: Target FM channel (0-5)
+            preset: The preset to convert to SysEx
+            program: MIDI program number (0-127)
 
         Returns:
-            bytes: Complete SysEx message
+            SysEx message as bytes
 
         Raises:
-            ValueError: If channel is invalid or format unsupported
+            ValueError: If format is unsupported or program is invalid
         """
-        if not (0 <= channel <= 5):
-            raise ValueError("Channel must be between 0 and 5")
+        if not (0 <= program <= 127):
+            raise ValueError("Program must be between 0 and 127")
 
-        supported_formats = ["TFI", "DMP", "WOPN"]
-        if preset.format_type not in supported_formats:
+        if preset.format_type not in ["TFI", "DMP", "WOPN"]:
             msg = f"Unsupported preset format: {preset.format_type}"
             raise ValueError(msg)
 
-        # Build SysEx message
-        sysex = [0xF0]  # Start of SysEx
-        sysex.append(self.MANUFACTURER_ID)  # Manufacturer ID
-        sysex.append(self.DEVICE_ID)  # Device ID
-        sysex.append(self.PRESET_LOAD_CMD)  # Command
-        sysex.append(channel)  # Target channel
+        # Start with MDMI SysEx header
+        message = [0xF0] + self.MDMI_MANUFACTURER_ID
+        message.extend([self.LOAD_PRESET_CMD, self.FM_TYPE, program])
 
-        # Add preset data based on format
-        if preset.format_type == "TFI":
-            sysex.extend(self._encode_tfi_preset(preset))
-        elif preset.format_type == "DMP":
-            sysex.extend(self._encode_dmp_preset(preset))
-        elif preset.format_type == "WOPN":
-            sysex.extend(self._encode_wopn_preset(preset))
+        # Add FM channel parameters
+        message.append(preset.algorithm or 0)
+        message.append(preset.feedback or 0)
+        message.append(preset.lfo_ams or 0)
+        message.append(preset.lfo_fms or 0)
 
-        # Add checksum (simple XOR checksum)
-        checksum = 0
-        for byte in sysex[1:]:  # Exclude F0
-            checksum ^= byte
-        sysex.append(checksum & 0x7F)  # Ensure 7-bit value
+        # Add operator data (4 operators)
+        operators = preset.operators or []
+        for i in range(4):
+            if i < len(operators):
+                op = operators[i]
+                message.extend(
+                    [
+                        op.mul or 0,
+                        op.dt1 or 0,
+                        op.ar or 0,
+                        op.rs or 0,
+                        op.d1r or 0,
+                        op.am or 0,
+                        op.d1l or 0,
+                        op.d2r or 0,
+                        op.rr or 0,
+                        op.tl or 0,
+                        op.ssg or 0,
+                    ]
+                )
+            else:
+                # Fill with zeros if operator doesn't exist
+                message.extend([0] * 11)
 
-        sysex.append(0xF7)  # End of SysEx
+        # End SysEx
+        message.append(0xF7)
 
-        return bytes(sysex)
+        return bytes(message)
 
-    def _encode_tfi_preset(self, preset: Preset) -> List[int]:
-        """Encode TFI preset data for SysEx."""
-        data = []
+    def generate_clear_preset(self, program: int) -> bytes:
+        """Generate SysEx message to clear a specific preset.
 
-        # Algorithm and feedback
-        alg_fb = (preset.feedback << 3) | (preset.algorithm & 0x07)
-        data.append(alg_fb & 0x7F)
+        Args:
+            program: MIDI program number (0-127) to clear
 
-        # LFO settings
-        lfo = (preset.lfo_fms << 4) | (preset.lfo_ams & 0x03)
-        data.append(lfo & 0x7F)
+        Returns:
+            SysEx message as bytes
 
-        # Operator data (4 operators)
-        for op in preset.operators[:4]:  # Ensure max 4 operators
-            # Pack operator parameters into 7-bit values
-            data.append(op.mul & 0x7F)
-            data.append(op.dt1 & 0x7F)
-            data.append(op.ar & 0x7F)
-            data.append(op.rs & 0x7F)
-            data.append(op.d1r & 0x7F)
-            data.append(op.am & 0x7F)
-            data.append(op.d1l & 0x7F)
-            data.append(op.d2r & 0x7F)
-            data.append(op.rr & 0x7F)
-            data.append(op.tl & 0x7F)
-            data.append(op.ssg & 0x7F)
+        Raises:
+            ValueError: If program is invalid
+        """
+        if not (0 <= program <= 127):
+            raise ValueError("Program must be between 0 and 127")
 
-        return data
+        message = [0xF0] + self.MDMI_MANUFACTURER_ID
+        message.extend([self.CLEAR_PRESET_CMD, self.FM_TYPE, program, 0xF7])
 
-    def _encode_dmp_preset(self, preset: Preset) -> List[int]:
-        """Encode DMP preset data for SysEx."""
-        data = []
+        return bytes(message)
 
-        # Algorithm and feedback
-        alg_fb = (preset.feedback << 3) | (preset.algorithm & 0x07)
-        data.append(alg_fb & 0x7F)
+    def generate_clear_all_presets(self) -> bytes:
+        """Generate SysEx message to clear all presets.
 
-        # LFO settings
-        lfo = (preset.lfo_fms << 4) | (preset.lfo_ams & 0x03)
-        data.append(lfo & 0x7F)
+        Returns:
+            SysEx message as bytes
+        """
+        message = [0xF0] + self.MDMI_MANUFACTURER_ID
+        message.extend([self.CLEAR_ALL_CMD, self.FM_TYPE, 0xF7])
 
-        # For DMP, we may not have operator data, so send minimal
-        # This would need to be expanded based on actual DMP content
-        return data
-
-    def _encode_wopn_preset(self, preset: Preset) -> List[int]:
-        """Encode WOPN preset data for SysEx."""
-        data = []
-
-        # For WOPN, we would need to select a specific instrument
-        # from the bank and encode its parameters
-        # This is a simplified implementation
-        data.append(0x00)  # Bank number
-        data.append(0x00)  # Instrument number
-
-        return data
+        return bytes(message)

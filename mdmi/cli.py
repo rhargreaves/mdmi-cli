@@ -2,158 +2,130 @@
 
 import click
 from pathlib import Path
-from typing import Optional
+import mido
 
-from .preset_parsers import WOPNParser, DMPParser, TFIParser, PresetParseError
-from .sysex_generator import SysExGenerator
-from .midi_interface import MIDIInterface, FakeMIDIInterface
-
-
-def detect_preset_format(filename: str) -> str:
-    """Detect preset format from file extension."""
-    suffix = Path(filename).suffix.lower()
-
-    if suffix == ".tfi":
-        return "TFI"
-    elif suffix == ".dmp":
-        return "DMP"
-    elif suffix == ".wopn":
-        return "WOPN"
-    else:
-        return "UNKNOWN"
-
-
-def get_parser(format_type: str):
-    """Get appropriate parser for format type."""
-    if format_type == "TFI":
-        return TFIParser()
-    elif format_type == "DMP":
-        return DMPParser()
-    elif format_type == "WOPN":
-        return WOPNParser()
-    else:
-        raise ValueError(f"Unsupported format: {format_type}")
+from mdmi.preset_parsers import detect_preset_format, parse_preset
+from mdmi.sysex_generator import SysExGenerator
+from mdmi.midi_interface import MIDIInterface, FakeMIDIInterface
 
 
 @click.group()
-@click.version_option(version="0.1.0")
 def main():
-    """Mega Drive MIDI Interface CLI tool.
-
-    Control your Mega Drive MIDI Interface via SysEx commands.
-    Supports loading WOPN, DMP, and TFI preset formats.
-    """
+    """Mega Drive MIDI Interface CLI."""
     pass
 
 
-@main.command("load-preset")
-@click.argument("preset_file", type=click.Path(), required=False)
+@main.command()
+@click.argument("preset_file", required=False)
 @click.option(
-    "--channel", "-c", type=click.IntRange(0, 5), help="Target FM channel (0-5)"
+    "--program",
+    type=click.IntRange(0, 127),
+    help="MIDI program number to store preset under (0-127)",
 )
-@click.option(
-    "--port", "-p", type=str, help="MIDI port name (use --list-ports to see available)"
-)
+@click.option("--port", help="MIDI output port name")
 @click.option("--fake", is_flag=True, help="Use fake MIDI interface for testing")
-@click.option("--list-ports", is_flag=True, help="List available MIDI ports and exit")
-def load_preset(
-    preset_file: Optional[str],
-    channel: Optional[int],
-    port: Optional[str],
-    fake: bool,
-    list_ports: bool,
-):
-    """Load a preset file to MDMI.
-
-    Supports TFI, DMP, and WOPN preset formats.
-    Use --fake for testing without real MIDI hardware.
-    """
-    import mido
-
+@click.option("--list-ports", is_flag=True, help="List available MIDI ports")
+def load_preset(preset_file, program, port, fake, list_ports):
+    """Load a preset file to MDMI."""
     if list_ports:
+        ports = mido.get_output_names()
         click.echo("Available MIDI ports:")
-        for port_name in mido.get_output_names():
+        for port_name in ports:
             click.echo(f"  {port_name}")
         return
 
-    # If not listing ports, preset_file and channel are required
     if not preset_file:
-        err_msg = "Error: PRESET_FILE is required when not using --list-ports"
-        click.echo(err_msg)
+        click.echo("Error: PRESET_FILE is required")
         raise click.Abort()
 
-    if channel is None:
-        click.echo("Error: --channel is required when loading a preset")
+    if program is None:
+        click.echo("Error: --program is required")
         raise click.Abort()
 
-    # Validate file
     preset_path = Path(preset_file)
     if not preset_path.exists():
-        click.echo(f"Error: File '{preset_file}' does not exist.")
+        click.echo(f"Error: File {preset_file} does not exist")
         raise click.Abort()
 
-    # Detect format
-    format_type = detect_preset_format(preset_file)
-    if format_type == "UNKNOWN":
-        click.echo(f"Error: Unsupported file format for '{preset_file}'.")
-        click.echo("Supported formats: .tfi, .dmp, .wopn")
-        raise click.Abort()
-
-    # Parse preset
     try:
         data = preset_path.read_bytes()
-        parser = get_parser(format_type)
-        preset = parser.parse(data)
-    except PresetParseError as e:
-        click.echo(f"Error parsing preset: {e}")
-        raise click.Abort()
+        format_type = detect_preset_format(data)
 
-    # Generate SysEx
-    try:
+        if format_type == "UNKNOWN":
+            click.echo("Error: Unsupported preset format")
+            raise click.Abort()
+
+        preset = parse_preset(data, format_type)
         generator = SysExGenerator()
-        sysex_data = generator.generate_preset_load(preset, channel)
-    except ValueError as e:
-        click.echo(f"Error generating SysEx: {e}")
-        raise click.Abort()
+        sysex_data = generator.generate_preset_load(preset, program)
 
-    # Send via MIDI
-    try:
         if fake:
             interface = FakeMIDIInterface()
-            interface.send_sysex(sysex_data)
-            click.echo(
-                f"Successfully loaded {format_type} preset "
-                f"'{preset_path.name}' to channel {channel} "
-                f"(fake interface)"
-            )
         else:
-            if not port:
-                available_ports = mido.get_output_names()
-                if not available_ports:
-                    click.echo("Error: No MIDI ports available.")
-                    raise click.Abort()
-                elif len(available_ports) == 1:
-                    port = available_ports[0]
-                    click.echo(f"Using MIDI port: {port}")
-                else:
-                    click.echo(
-                        "Error: Multiple MIDI ports available. "
-                        "Please specify with --port:"
-                    )
-                    for port_name in available_ports:
-                        click.echo(f"  {port_name}")
-                    raise click.Abort()
-
             interface = MIDIInterface(port)
-            interface.send_sysex(sysex_data)
-            interface.close()
-            click.echo(
-                f"Successfully loaded {format_type} preset "
-                f"'{preset_path.name}' to channel {channel}"
-            )
+
+        interface.send_sysex(sysex_data)
+
+        msg = f"Successfully loaded {format_type} preset to program {program}"
+        click.echo(msg)
 
     except Exception as e:
-        click.echo(f"Error sending MIDI: {e}")
+        click.echo(f"Error: {e}")
+        raise click.Abort()
+
+
+@main.command()
+@click.option(
+    "--program",
+    type=click.IntRange(0, 127),
+    required=True,
+    help="MIDI program number to clear (0-127)",
+)
+@click.option("--port", help="MIDI output port name")
+@click.option("--fake", is_flag=True, help="Use fake MIDI interface for testing")
+def clear_preset(program, port, fake):
+    """Clear a specific user preset."""
+    try:
+        generator = SysExGenerator()
+        sysex_data = generator.generate_clear_preset(program)
+
+        if fake:
+            interface = FakeMIDIInterface()
+        else:
+            interface = MIDIInterface(port)
+
+        interface.send_sysex(sysex_data)
+        click.echo(f"Successfully cleared preset {program}")
+
+    except Exception as e:
+        click.echo(f"Error: {e}")
+        raise click.Abort()
+
+
+@main.command()
+@click.option("--port", help="MIDI output port name")
+@click.option("--fake", is_flag=True, help="Use fake MIDI interface for testing")
+@click.option("--confirm", is_flag=True, help="Skip confirmation prompt")
+def clear_all_presets(port, fake, confirm):
+    """Clear all user presets."""
+    if not confirm:
+        prompt = "This will clear ALL user presets. Continue?"
+        click.confirm(prompt, abort=True)
+
+    try:
+        generator = SysExGenerator()
+        sysex_data = generator.generate_clear_all_presets()
+
+        if fake:
+            interface = FakeMIDIInterface()
+        else:
+            interface = MIDIInterface(port)
+
+        interface.send_sysex(sysex_data)
+        click.echo("Successfully cleared all presets")
+
+    except Exception as e:
+        click.echo(f"Error: {e}")
         raise click.Abort()
 
 

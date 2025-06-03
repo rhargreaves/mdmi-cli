@@ -53,6 +53,32 @@ class Preset:
             self.operators = []
 
 
+def detect_preset_format(data: bytes) -> str:
+    """Detect preset format from data content."""
+    if len(data) >= 12 and data.startswith(b"WOPN2-BANK\x00"):
+        return "WOPN"
+    elif len(data) >= 4 and data.startswith(b".DMP"):
+        return "DMP"
+    elif len(data) == 42:
+        return "TFI"
+    else:
+        return "UNKNOWN"
+
+
+def parse_preset(data: bytes, format_type: str) -> Preset:
+    """Parse preset data using the appropriate parser."""
+    if format_type == "WOPN":
+        parser = WOPNParser()
+    elif format_type == "DMP":
+        parser = DMPParser()
+    elif format_type == "TFI":
+        parser = TFIParser()
+    else:
+        raise PresetParseError(f"Unsupported format: {format_type}")
+
+    return parser.parse(data)
+
+
 class WOPNParser:
     """Parser for WOPN preset files."""
 
