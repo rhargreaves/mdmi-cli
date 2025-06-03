@@ -95,7 +95,8 @@ def list_ports():
 
 @main.command()
 @click.argument("wopn_file", type=click.Path(exists=True))
-def list_wopn(wopn_file):
+@click.option("--full", is_flag=True, help="Show all instruments (default: first 10 per bank)")
+def list_wopn(wopn_file, full):
     """List contents of a WOPN file."""
     try:
         data = Path(wopn_file).read_bytes()
@@ -113,20 +114,36 @@ def list_wopn(wopn_file):
             click.echo("\nMelody Banks:")
             for bank in contents["melody_banks"]:
                 click.echo(f"  Bank {bank['index']}: {bank['name']}")
-                for inst in bank["instruments"][:10]:  # Show first 10
-                    click.echo(f"    {inst['index']:3d}: {inst['name']}")
-                if len(bank["instruments"]) > 10:
-                    click.echo(f"    ... and {len(bank['instruments']) - 10} more")
+                instruments = bank["instruments"]
+
+                if full:
+                    # Show all instruments
+                    for inst in instruments:
+                        click.echo(f"    {inst['index']:3d}: {inst['name']}")
+                else:
+                    # Show first 10 instruments
+                    for inst in instruments[:10]:
+                        click.echo(f"    {inst['index']:3d}: {inst['name']}")
+                    if len(instruments) > 10:
+                        click.echo(f"    ... and {len(instruments) - 10} more (use --full to see all)")
 
         # Show percussion banks
         if contents["percussion_banks"]:
             click.echo("\nPercussion Banks:")
             for bank in contents["percussion_banks"]:
                 click.echo(f"  Bank {bank['index']}: {bank['name']}")
-                for inst in bank["instruments"][:10]:  # Show first 10
-                    click.echo(f"    {inst['index']:3d}: {inst['name']}")
-                if len(bank["instruments"]) > 10:
-                    click.echo(f"    ... and {len(bank['instruments']) - 10} more")
+                instruments = bank["instruments"]
+
+                if full:
+                    # Show all instruments
+                    for inst in instruments:
+                        click.echo(f"    {inst['index']:3d}: {inst['name']}")
+                else:
+                    # Show first 10 instruments
+                    for inst in instruments[:10]:
+                        click.echo(f"    {inst['index']:3d}: {inst['name']}")
+                    if len(instruments) > 10:
+                        click.echo(f"    ... and {len(instruments) - 10} more (use --full to see all)")
 
     except Exception as e:
         click.echo(f"Error: {e}")

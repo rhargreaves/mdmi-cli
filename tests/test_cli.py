@@ -270,3 +270,87 @@ class TestCLI:
 
         assert result.exit_code != 0
         mock_interface.send_sysex.assert_not_called()
+
+    @patch("mdmi.cli.Path.read_bytes")
+    @patch("mdmi.cli.detect_preset_format")
+    @patch("mdmi.cli.list_wopn_contents")
+    def test_list_wopn_command(self, mock_list_contents, mock_detect, mock_read):
+        """Test list-wopn command with limited display (default)."""
+        # Setup mocks
+        mock_read.return_value = b"mock_wopn_data"
+        mock_detect.return_value = "WOPN"
+        mock_list_contents.return_value = {
+            "melody_banks": [
+                {
+                    "index": 0,
+                    "name": "Test Bank",
+                    "instruments": [
+                        {"index": i, "name": f"Instrument {i}"}
+                        for i in range(15)  # 15 instruments to test truncation
+                    ],
+                }
+            ],
+            "percussion_banks": [],
+        }
+
+        runner = CliRunner()
+        with runner.isolated_filesystem():
+            # Create a test file so Click validation passes
+            with open("test.wopn", "wb") as f:
+                f.write(b"mock_wopn_data")
+
+            result = runner.invoke(main, ["list-wopn", "test.wopn"])
+
+        assert result.exit_code == 0
+        assert "Test Bank" in result.output
+        assert "Instrument 0" in result.output
+        assert "Instrument 9" in result.output  # Should show first 10
+        assert "Instrument 10" not in result.output  # Should not show beyond 10
+        assert "... and 5 more (use --full to see all)" in result.output
+
+    @patch("mdmi.cli.Path.read_bytes")
+    @patch("mdmi.cli.detect_preset_format")
+    @patch("mdmi.cli.list_wopn_contents")
+    def test_list_wopn_command_full(self, mock_list_contents, mock_detect, mock_read):
+        """Test list-wopn command with --full option."""
+        # Setup mocks
+        mock_read.return_value = b"mock_wopn_data"
+        mock_detect.return_value = "WOPN"
+        mock_list_contents.return_value = {
+            "melody_banks": [
+                {
+                    "index": 0,
+                    "name": "Test Bank",
+                    "instruments": [
+                        {"index": i, "name": f"Instrument {i}"}
+                        for i in range(15)  # 15 instruments
+                    ],
+                }
+            ],
+            "percussion_banks": [],
+        }
+
+        runner = CliRunner()
+        with runner.isolated_filesystem():
+            # Create a test file so Click validation passes
+            with open("test.wopn", "wb") as f:
+                f.write(b"mock_wopn_data")
+
+            result = runner.invoke(main, ["list-wopn", "test.wopn", "--full"])
+
+        assert result.exit_code == 0
+        assert "Test Bank" in result.output
+        assert "Instrument 0" in result.output
+        assert "Instrument 9" in result.output
+        assert "Instrument 14" in result.output  # Should show all instruments
+        assert "... and" not in result.output  # Should not show truncation message
+
+    def test_list_wopn_help(self):
+        """Test list-wopn command help includes --full option."""
+        runner = CliRunner()
+        result = runner.invoke(main, ["list-wopn", "--help"])
+
+        assert result.exit_code == 0
+        assert "List contents of a WOPN file" in result.output
+        assert "--full" in result.output
+        assert "Show all instruments" in result.output
