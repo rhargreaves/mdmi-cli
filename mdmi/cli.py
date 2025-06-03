@@ -4,7 +4,7 @@ import click
 from pathlib import Path
 import mido
 
-from mdmi.preset_parsers import detect_preset_format, parse_preset
+from mdmi.preset_parsers import detect_preset_format, parse_preset, list_wopn_contents
 from mdmi.sysex_generator import SysExGenerator
 from mdmi.midi_interface import MIDIInterface, FakeMIDIInterface
 
@@ -25,7 +25,19 @@ def main():
 @click.option("--port", help="MIDI output port name")
 @click.option("--fake", is_flag=True, help="Use fake MIDI interface for testing")
 @click.option("--list-ports", is_flag=True, help="List available MIDI ports")
-def load_preset(preset_file, program, port, fake, list_ports):
+@click.option("--bank", type=int, default=0, help="WOPN bank index (default: 0)")
+@click.option(
+    "--instrument", type=int, default=0, help="WOPN instrument index (default: 0)"
+)
+@click.option(
+    "--bank-type",
+    type=click.Choice(["melody", "percussion"]),
+    default="melody",
+    help="WOPN bank type (default: melody)",
+)
+def load_preset(
+    preset_file, program, port, fake, list_ports, bank, instrument, bank_type
+):
     """Load a preset file to MDMI."""
     if list_ports:
         ports = mido.get_output_names()
@@ -55,7 +67,12 @@ def load_preset(preset_file, program, port, fake, list_ports):
             click.echo("Error: Unsupported preset format")
             raise click.Abort()
 
-        preset = parse_preset(data, format_type)
+        # Parse with format-specific options
+        kwargs = {}
+        if format_type == "WOPN":
+            kwargs = {"bank": bank, "instrument": instrument, "bank_type": bank_type}
+
+        preset = parse_preset(data, format_type, **kwargs)
         generator = SysExGenerator()
         sysex_data = generator.generate_preset_load(preset, program)
 
@@ -66,8 +83,52 @@ def load_preset(preset_file, program, port, fake, list_ports):
 
         interface.send_sysex(sysex_data)
 
-        msg = f"Successfully loaded {format_type} preset to program {program}"
+        if format_type == "WOPN":
+            msg = f"Successfully loaded {format_type} preset '{preset.name}' "
+            msg += f"(bank {bank}, instrument {instrument}) to program {program}"
+        else:
+            msg = f"Successfully loaded {format_type} preset to program {program}"
         click.echo(msg)
+
+    except Exception as e:
+        click.echo(f"Error: {e}")
+        raise click.Abort()
+
+
+@main.command()
+@click.argument("wopn_file", type=click.Path(exists=True))
+def list_wopn(wopn_file):
+    """List contents of a WOPN file."""
+    try:
+        data = Path(wopn_file).read_bytes()
+        if detect_preset_format(data) != "WOPN":
+            click.echo("Error: File is not a valid WOPN file")
+            raise click.Abort()
+
+        contents = list_wopn_contents(data)
+
+        click.echo(f"WOPN File: {wopn_file}")
+        click.echo("=" * 50)
+
+        # Show melody banks
+        if contents["melody_banks"]:
+            click.echo("\nMelody Banks:")
+            for bank in contents["melody_banks"]:
+                click.echo(f"  Bank {bank['index']}: {bank['name']}")
+                for inst in bank["instruments"][:10]:  # Show first 10
+                    click.echo(f"    {inst['index']:3d}: {inst['name']}")
+                if len(bank["instruments"]) > 10:
+                    click.echo(f"    ... and {len(bank['instruments']) - 10} more")
+
+        # Show percussion banks
+        if contents["percussion_banks"]:
+            click.echo("\nPercussion Banks:")
+            for bank in contents["percussion_banks"]:
+                click.echo(f"  Bank {bank['index']}: {bank['name']}")
+                for inst in bank["instruments"][:10]:  # Show first 10
+                    click.echo(f"    {inst['index']:3d}: {inst['name']}")
+                if len(bank["instruments"]) > 10:
+                    click.echo(f"    ... and {len(bank['instruments']) - 10} more")
 
     except Exception as e:
         click.echo(f"Error: {e}")

@@ -2,6 +2,11 @@
 
 from dataclasses import dataclass
 from typing import List, Optional
+from pathlib import Path
+
+from .presets.wopn_parser import parse_wopn
+from .presets.dmp_parser import parse_dmp
+from .presets.tfi_parser import parse_tfi
 
 
 class PresetParseError(Exception):
@@ -12,15 +17,15 @@ class PresetParseError(Exception):
 
 @dataclass
 class FMOperator:
-    """FM operator parameters."""
+    """FM operator parameters compatible with MDMI SysEx."""
 
     mul: int  # Multiple
-    dt1: int  # Detune 1
+    dt1: int  # Detune 1 (mapped from dt)
     ar: int  # Attack Rate
     rs: int  # Rate Scaling
-    d1r: int  # Decay 1 Rate
+    d1r: int  # Decay 1 Rate (mapped from dr)
     am: int  # Amplitude Modulation
-    d1l: int  # Decay 1 Level
+    d1l: int  # Decay 1 Level (mapped from sl)
     d2r: int  # Decay 2 Rate
     rr: int  # Release Rate
     tl: int  # Total Level
@@ -29,7 +34,7 @@ class FMOperator:
 
 @dataclass
 class Preset:
-    """Base preset class."""
+    """Base preset class compatible with MDMI SysEx."""
 
     format_type: str
     name: str = ""
@@ -65,145 +70,177 @@ def detect_preset_format(data: bytes) -> str:
         return "UNKNOWN"
 
 
-def parse_preset(data: bytes, format_type: str) -> Preset:
+def _convert_fm_operator(fm_op) -> FMOperator:
+    """Convert FmOperator to MDMI-compatible FMOperator."""
+    return FMOperator(
+        mul=getattr(fm_op, "mul", 0),
+        dt1=getattr(fm_op, "dt", 0),  # Map dt to dt1
+        ar=getattr(fm_op, "ar", 0),
+        rs=getattr(fm_op, "rs", 0),
+        d1r=getattr(fm_op, "dr", 0),  # Map dr to d1r
+        am=getattr(fm_op, "am", 0),
+        d1l=getattr(fm_op, "sl", 0),  # Map sl to d1l
+        d2r=getattr(fm_op, "d2r", 0),
+        rr=getattr(fm_op, "rr", 0),
+        tl=getattr(fm_op, "tl", 0),
+        ssg=getattr(fm_op, "ssg", 0),
+    )
+
+
+def parse_preset(data: bytes, format_type: str, **kwargs) -> Preset:
     """Parse preset data using the appropriate parser."""
     if format_type == "WOPN":
-        parser = WOPNParser()
+        # For WOPN, we need to write to temp file for file-based parser
+        import tempfile
+
+        with tempfile.NamedTemporaryFile(suffix=".wopn", delete=False) as f:
+            f.write(data)
+            temp_filename = f.name
+
+        try:
+            wopn = parse_wopn(temp_filename)
+
+            # Extract specific instrument if requested
+            bank_index = kwargs.get("bank", 0)
+            instrument_index = kwargs.get("instrument", 0)
+            bank_type = kwargs.get("bank_type", "melody")  # 'melody' or 'percussion'
+
+            banks = wopn.m_banks if bank_type == "melody" else wopn.p_banks
+
+            if bank_index >= len(banks):
+                raise PresetParseError(f"Bank {bank_index} not found")
+
+            bank = banks[bank_index]
+            if instrument_index >= len(bank.instruments):
+                raise PresetParseError(
+                    f"Instrument {instrument_index} not found in bank {bank_index}"
+                )
+
+            instrument = bank.instruments[instrument_index]
+
+            # Convert to MDMI format
+            operators = [_convert_fm_operator(op) for op in instrument.operators]
+
+            preset = Preset(
+                format_type="WOPN",
+                name=instrument.name,
+                algorithm=instrument.algorithm,
+                feedback=instrument.feedback,
+                lfo_ams=instrument.lfo_ams,
+                lfo_fms=instrument.lfo_fms,
+                operators=operators,
+                melody_banks=len(wopn.m_banks),
+                percussion_banks=len(wopn.p_banks),
+            )
+            return preset
+
+        finally:
+            import os
+
+            os.unlink(temp_filename)
+
     elif format_type == "DMP":
-        parser = DMPParser()
+        import tempfile
+
+        with tempfile.NamedTemporaryFile(suffix=".dmp", delete=False) as f:
+            f.write(data)
+            temp_filename = f.name
+
+        try:
+            dmp = parse_dmp(temp_filename)
+
+            # Convert operators if they exist
+            operators = []
+            if hasattr(dmp, "operators") and dmp.operators:
+                operators = [_convert_fm_operator(op) for op in dmp.operators]
+
+            preset = Preset(
+                format_type="DMP",
+                name=dmp.name,
+                version=getattr(dmp, "version", None),
+                algorithm=getattr(dmp, "algorithm", 0),
+                feedback=getattr(dmp, "feedback", 0),
+                lfo_ams=getattr(dmp, "lfo_ams", 0),
+                lfo_fms=getattr(dmp, "lfo_fms", 0),
+                operators=operators,
+                system=getattr(dmp, "system_type", None),
+            )
+            return preset
+
+        finally:
+            import os
+
+            os.unlink(temp_filename)
+
     elif format_type == "TFI":
-        parser = TFIParser()
+        import tempfile
+
+        with tempfile.NamedTemporaryFile(suffix=".tfi", delete=False) as f:
+            f.write(data)
+            temp_filename = f.name
+
+        try:
+            tfi = parse_tfi(temp_filename)
+
+            # Convert operators
+            operators = [_convert_fm_operator(op) for op in tfi.operators]
+
+            preset = Preset(
+                format_type="TFI",
+                name=tfi.name,
+                algorithm=tfi.algorithm,
+                feedback=tfi.feedback,
+                lfo_ams=getattr(tfi, "lfo_ams", 0),
+                lfo_fms=getattr(tfi, "lfo_fms", 0),
+                operators=operators,
+                fm_parameters=data,
+            )
+            return preset
+
+        finally:
+            import os
+
+            os.unlink(temp_filename)
     else:
         raise PresetParseError(f"Unsupported format: {format_type}")
 
-    return parser.parse(data)
 
+def list_wopn_contents(data: bytes) -> dict:
+    """List WOPN bank and instrument contents for selection."""
+    import tempfile
 
-class WOPNParser:
-    """Parser for WOPN preset files."""
+    with tempfile.NamedTemporaryFile(suffix=".wopn", delete=False) as f:
+        f.write(data)
+        temp_filename = f.name
 
-    def parse(self, data: bytes) -> Preset:
-        """Parse WOPN format data."""
-        if len(data) < 16:
-            raise PresetParseError("File too small to be valid WOPN")
+    try:
+        wopn = parse_wopn(temp_filename)
 
-        # Check header
-        if not data.startswith(b"WOPN2-BANK\x00"):
-            raise PresetParseError("Invalid WOPN header")
+        contents = {"melody_banks": [], "percussion_banks": []}
 
-        # Parse header
-        version = data[12]
-        if version not in [1, 2]:
-            raise PresetParseError(f"Unsupported WOPN version: {version}")
-
-        melody_banks = data[15]
-        percussion_banks = data[16]
-
-        preset = Preset(
-            format_type="WOPN",
-            version=version,
-            melody_banks=melody_banks,
-            percussion_banks=percussion_banks,
-        )
-
-        return preset
-
-
-class DMPParser:
-    """Parser for DMP preset files."""
-
-    def parse(self, data: bytes) -> Preset:
-        """Parse DMP format data."""
-        if len(data) < 4:
-            raise PresetParseError("File too small to be valid DMP")
-
-        # Check signature
-        if not data.startswith(b".DMP"):
-            raise PresetParseError("Invalid DMP signature")
-
-        if len(data) < 38:  # Minimum size for DMP v11
-            raise PresetParseError("DMP file too small")
-
-        version = data[4]
-        system = data[5]
-
-        # Extract name (32 bytes, null-terminated)
-        name_bytes = data[6:38]
-        name = name_bytes.split(b"\x00")[0].decode("utf-8", errors="ignore")
-
-        # Parse FM parameters based on version
-        if version == 11 and len(data) >= 49:
-            fm_data = data[38:49]  # 11 bytes of FM parameters
-
-            # Extract basic FM parameters
-            algorithm = fm_data[0] & 0x07
-            feedback = (fm_data[0] >> 3) & 0x07
-            lfo_ams = fm_data[1] & 0x03
-            lfo_fms = (fm_data[1] >> 4) & 0x07
-
-            preset = Preset(
-                format_type="DMP",
-                version=version,
-                system=system,
-                name=name,
-                algorithm=algorithm,
-                feedback=feedback,
-                lfo_ams=lfo_ams,
-                lfo_fms=lfo_fms,
-            )
-        else:
-            preset = Preset(
-                format_type="DMP",
-                version=version,
-                system=system,
-                name=name,
-            )
-
-        return preset
-
-
-class TFIParser:
-    """Parser for TFI preset files."""
-
-    def parse(self, data: bytes) -> Preset:
-        """Parse TFI format data."""
-        if len(data) != 42:
-            raise PresetParseError(
-                f"Invalid TFI size: expected 42 bytes, got {len(data)}"
-            )
-
-        # TFI format is 42 bytes of FM parameters
-        # Extract basic parameters
-        algorithm = data[0] & 0x07
-        feedback = (data[0] >> 3) & 0x07
-
-        # Parse operators
-        operators = []
-        for i in range(4):  # 4 operators
-            op_offset = 1 + (i * 10)  # Each operator is 10 bytes
-            if op_offset + 10 <= len(data):
-                operators.append(
-                    FMOperator(
-                        mul=data[op_offset] & 0x0F,
-                        dt1=(data[op_offset] >> 4) & 0x07,
-                        ar=data[op_offset + 1] & 0x1F,
-                        rs=(data[op_offset + 1] >> 6) & 0x03,
-                        d1r=data[op_offset + 2] & 0x1F,
-                        am=(data[op_offset + 2] >> 7) & 0x01,
-                        d1l=data[op_offset + 3] & 0x0F,
-                        d2r=(data[op_offset + 3] >> 4) & 0x0F,
-                        rr=data[op_offset + 4] & 0x0F,
-                        tl=data[op_offset + 5] & 0x7F,
-                        ssg=data[op_offset + 6] & 0x0F,
+        # List melody banks
+        for i, bank in enumerate(wopn.m_banks):
+            bank_info = {"index": i, "name": bank.name, "instruments": []}
+            for j, instrument in enumerate(bank.instruments):
+                if instrument.name.strip():  # Skip empty instruments
+                    bank_info["instruments"].append(
+                        {"index": j, "name": instrument.name}
                     )
-                )
+            contents["melody_banks"].append(bank_info)
 
-        preset = Preset(
-            format_type="TFI",
-            algorithm=algorithm,
-            feedback=feedback,
-            operators=operators,
-            fm_parameters=data,
-        )
+        # List percussion banks
+        for i, bank in enumerate(wopn.p_banks):
+            bank_info = {"index": i, "name": bank.name, "instruments": []}
+            for j, instrument in enumerate(bank.instruments):
+                if instrument.name.strip():  # Skip empty instruments
+                    bank_info["instruments"].append(
+                        {"index": j, "name": instrument.name}
+                    )
+            contents["percussion_banks"].append(bank_info)
 
-        return preset
+        return contents
+
+    finally:
+        import os
+
+        os.unlink(temp_filename)

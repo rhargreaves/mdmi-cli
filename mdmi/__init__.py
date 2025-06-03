@@ -1,3 +1,3 @@
-"""MDMI - Mega Drive MIDI Interface CLI tool."""
+"""MDMI CLI package."""
 
 __version__ = "0.1.0"
