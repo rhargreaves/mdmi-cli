@@ -1,7 +1,7 @@
 from .dmp import Dmp
 from ..fm_operator import FmOperator
 from bitstruct import unpack_dict
-from ..util import extract_name, read_byte
+from ..util import read_byte
 
 
 def parse_dmp(file_obj, name="dmp_data"):

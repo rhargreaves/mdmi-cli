@@ -1,7 +1,5 @@
 from .tfi import Tfi
 from ..fm_operator import FmOperator
-from bitstruct import unpack_dict
-from ..util import extract_name
 
 
 def parse_tfi(file_obj, name="tfi_data"):

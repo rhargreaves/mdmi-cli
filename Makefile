@@ -28,7 +28,7 @@ test-verbose:
 .PHONY: test-verbose
 
 lint:
-	python3 -m flake8 mdmi/ tests/
+	ruff check --fix .
 .PHONY: lint
 
 clean:
