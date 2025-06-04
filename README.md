@@ -12,10 +12,12 @@ Python CLI for controlling the Mega Drive MIDI Interface (MDMI). Supports loadin
 - **Multi-format preset support**: Load presets in WOPN, DMP, and TFI formats to MDMI user presets (programs 0-127)
 - **Advanced WOPN support**: Choose specific bank, instrument, and bank type (melody/percussion) from WOPN files
 - **Intelligent format detection**: Automatic detection of preset formats based on file headers and structure
-- **Environment variable support**: Set `MDMI_MIDI_PORT` once to avoid specifying `--port` repeatedly
+- **Flexible MIDI port configuration**: Separate input/output port support with environment variables
 - **Preset management**: Clear individual user presets or all presets at once
 - **WOPN browsing**: List WOPN file contents to explore available banks and instruments
-- **Hardware MIDI support**: Works with MIDI hardware for real-time preset loading
+- **Connectivity testing**: Ping/pong functionality to test MDMI connectivity and measure round-trip latency
+- **Hardware MIDI support**: Works with MIDI hardware for real-time preset loading and bidirectional communication
+- **Testing support**: Fake MIDI interface mode for development and testing
 - **Comprehensive testing**: Full test coverage including real-world data validation
 
 ## Installation (from PyPI)
@@ -41,46 +43,56 @@ pip install -r requirements.txt
 
 ### Environment Variable Setup (Optional)
 
-Set the `MDMI_MIDI_PORT` environment variable to avoid specifying `--port` in every command:
+Set MIDI port environment variables to avoid specifying ports in every command:
 
 ```bash
-# Set for current session
-export MDMI_MIDI_PORT="USB MIDI Interface"
+# Set output port (for sending to MDMI)
+export MDMI_MIDI_OUT="IAC Driver Bus 1"
 
-# Or add to your shell profile (~/.bashrc, ~/.zshrc, etc.)
-echo 'export MDMI_MIDI_PORT="USB MIDI Interface"' >> ~/.bashrc
+# Set input port (for receiving from MDMI)
+export MDMI_MIDI_IN="IAC Driver Bus 2"
+
+# Legacy support: MDMI_MIDI_PORT (used as fallback for output)
+export MDMI_MIDI_PORT="IAC Driver Bus 1"
+
+# Add to your shell profile (~/.bashrc, ~/.zshrc, etc.)
+echo 'export MDMI_MIDI_OUT="IAC Driver Bus 1"' >> ~/.bashrc
+echo 'export MDMI_MIDI_IN="IAC Driver Bus 2"' >> ~/.bashrc
 ```
 
-With the environment variable set, you can omit `--port` from all commands:
+With environment variables set, you can omit `--midi-out` and `--midi-in` from commands:
 
 ```bash
-# These commands will automatically use MDMI_MIDI_PORT
+# These commands will automatically use environment variables
 mdmi load-preset example.tfi --program 0
 mdmi clear-preset --program 5
-mdmi clear-all-presets --confirm
+mdmi ping
 ```
 
 ### Load a preset
 
 ```bash
-# Load TFI preset to program 0 (uses MDMI_MIDI_PORT if set)
+# Load TFI preset to program 0 (uses MDMI_MIDI_OUT if set)
 mdmi load-preset example.tfi --program 0
 
 # Load DMP preset to program 5 via specific MIDI port
-mdmi load-preset example.dmp --program 5 --port "USB MIDI Interface"
+mdmi load-preset example.dmp --program 5 --midi-out "IAC Driver Bus 1"
 
 # Load specific WOPN instrument to program 10
 mdmi load-preset soundbank.wopn --program 10 --bank 0 --instrument 5 --bank-type melody
 
-# List available MIDI ports
-mdmi list-ports
+# Test with fake interface (for development)
+mdmi load-preset example.tfi --program 0 --fake
 ```
 
 ### WOPN file management
 
 ```bash
-# List contents of a WOPN file
+# List contents of a WOPN file (first 10 instruments per bank)
 mdmi list-wopn soundbank.wopn
+
+# List all instruments in WOPN file
+mdmi list-wopn soundbank.wopn --full
 
 # Load percussion instrument from WOPN
 mdmi load-preset soundbank.wopn --program 20 --bank 0 --instrument 3 --bank-type percussion
@@ -92,29 +104,54 @@ mdmi load-preset soundbank.wopn --program 15 --bank 1 --instrument 65 --bank-typ
 ### Clear presets
 
 ```bash
-# Clear preset at program 5 (uses MDMI_MIDI_PORT if set)
+# Clear preset at program 5 (uses MDMI_MIDI_OUT if set)
 mdmi clear-preset --program 5
 
 # Clear all presets (with confirmation)
 mdmi clear-all-presets
 
 # Clear all presets (skip confirmation) with specific port
-mdmi clear-all-presets --confirm --port "My MIDI Device"
+mdmi clear-all-presets --confirm --midi-out "IAC Driver Bus 1"
+```
+
+### Test connectivity
+
+```bash
+# Test MDMI connectivity with ping/pong
+mdmi ping
+
+# Test with custom timeout
+mdmi ping --timeout 10.0
+
+# Test with specific ports
+mdmi ping --midi-out "IAC Driver Bus 1" --midi-in "IAC Driver Bus 2"
+```
+
+### List available MIDI ports
+
+```bash
+# List all available MIDI input and output ports
+mdmi list-ports
 ```
 
 ## Configuration
 
 ### Environment Variables
 
-- **`MDMI_MIDI_PORT`**: Default MIDI output port name
-  - Used automatically when `--port` is not specified
-  - Can be overridden by the `--port` option for individual commands
+- **`MDMI_MIDI_OUT`**: Default MIDI output port name (takes precedence)
+- **`MDMI_MIDI_IN`**: Default MIDI input port name
+- **`MDMI_MIDI_PORT`**: Legacy fallback for MIDI output port
+  - Used automatically when port options are not specified
+  - Can be overridden by command-line options for individual commands
   - Improves workflow efficiency when consistently using the same MIDI device
 
 ### Command-line Options
 
-All commands support:
-- `--port TEXT`: MIDI output port name (overrides `MDMI_MIDI_PORT`)
+Most commands support:
+- `--midi-out TEXT`: MIDI output port name (overrides environment variables)
+
+Commands with bidirectional communication (ping) also support:
+- `--midi-in TEXT`: MIDI input port name (overrides `MDMI_MIDI_IN`)
 
 ## Supported Formats
 
@@ -137,7 +174,7 @@ All commands support:
 - Advanced instrument selection by bank index and instrument index
 - Bank type selection (melody/percussion)
 - Comprehensive bank browsing with `list-wopn` command
-- Support for multiple banks per type
+- Support for multiple banks per type with `--full` option for complete listings
 
 ## Development
 
