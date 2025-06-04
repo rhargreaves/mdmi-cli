@@ -1,14 +1,9 @@
 name: Publish to PyPI
 
 on:
-  release:
-    types: [published]
-  workflow_dispatch:
-    inputs:
-      test_pypi:
-        description: 'Publish to Test PyPI instead of PyPI'
-        type: boolean
-        default: false
+  push:
+    tags:
+      - 'v*'  # Trigger on version tags like v1.0.0, v1.2.3, etc.
 
 jobs:
   publish:
@@ -33,12 +28,5 @@ jobs:
     - name: Build package
       run: python -m build
 
-    - name: Publish to Test PyPI
-      if: github.event.inputs.test_pypi == 'true'
-      uses: pypa/gh-action-pypi-publish@release/v1
-      with:
-        repository-url: https://test.pypi.org/legacy/
-
     - name: Publish to PyPI
-      if: github.event_name == 'release' || github.event.inputs.test_pypi == 'false'
       uses: pypa/gh-action-pypi-publish@release/v1
