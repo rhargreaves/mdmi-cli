@@ -36,9 +36,6 @@ Homepage = "https://github.com/rhargreaves/mdmi-cli"
 Repository = "https://github.com/rhargreaves/mdmi-cli"
 Issues = "https://github.com/rhargreaves/mdmi-cli/issues"
 
-[tool.setuptools]
-packages = ["mdmi", "mdmi.presets"]
-
 [tool.setuptools.dynamic]
 version = { attr = "mdmi.__version__" }
 
