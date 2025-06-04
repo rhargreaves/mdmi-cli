@@ -1,0 +1,15 @@
+---
+description: Always apply these rules
+globs:
+alwaysApply: true
+---
+
+- Don't add inline comments explaining obvious code
+- Don't make unrelated improvements unless explicitly asked
+- Don't remove user-added comments
+- Don't change naming schemes without explicit instruction
+- Don't add comments in code blocks for explanations
+
+- Follow strict TDD for new features/fixes
+- After test passes, ask me if I want to commit the code
+- Update the README.md file after each change
