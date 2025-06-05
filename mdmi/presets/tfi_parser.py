@@ -1,3 +1,5 @@
+"""TFI parser for Texas Instruments FM format."""
+
 from .tfi import Tfi
 from ..fm_operator import FmOperator
 
@@ -23,14 +25,14 @@ def parse_operator(f):
         # Pad with zeros if not enough data
         data = data + b"\x00" * (10 - len(data))
 
-    # TFI format appears to be: MUL, DT, TL, RS, AR, DR, D2R, RR, SL, SSG (1 byte each)
+    # TFI format appears to be: MUL, DT, TL, RS, AR, DR, SR, RR, SL, SSG (1 byte each)
     mul = data[0]
     dt = data[1]
     tl = data[2]
     rs = data[3]
     ar = data[4]
     dr = data[5]
-    d2r = data[6]
+    sr = data[6]
     rr = data[7]
     sl = data[8]
     ssg = data[9]
@@ -43,7 +45,7 @@ def parse_operator(f):
         ar=ar,
         am=0,  # AM not in TFI format
         dr=dr,
-        d2r=d2r,
+        sr=sr,
         sl=sl,
         rr=rr,
         ssg=ssg,

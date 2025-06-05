@@ -51,13 +51,13 @@ class SysExGenerator:
                 message.extend(
                     [
                         op.mul or 0,
-                        op.dt1 or 0,
+                        op.dt or 0,
                         op.ar or 0,
                         op.rs or 0,
-                        op.d1r or 0,
+                        op.dr or 0,
                         op.am or 0,
-                        op.d1l or 0,
-                        op.d2r or 0,
+                        op.sl or 0,
+                        op.sr or 0,
                         op.rr or 0,
                         op.tl or 0,
                         op.ssg or 0,

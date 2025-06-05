@@ -15,10 +15,10 @@ class TestSysExGenerator:
 
         # Create a TFI preset with specific operator values
         operators = [
-            FMOperator(mul=1, dt1=2, ar=31, rs=1, d1r=15, am=0, d1l=14, d2r=0, rr=15, tl=39, ssg=0),
-            FMOperator(mul=4, dt1=6, ar=24, rs=1, d1r=9, am=0, d1l=6, d2r=9, rr=7, tl=36, ssg=0),
-            FMOperator(mul=2, dt1=7, ar=31, rs=3, d1r=23, am=0, d1l=9, d2r=15, rr=1, tl=4, ssg=0),
-            FMOperator(mul=1, dt1=3, ar=27, rs=2, d1r=4, am=0, d1l=10, d2r=4, rr=6, tl=2, ssg=0),
+            FMOperator(mul=1, dt=2, ar=31, rs=1, dr=15, am=0, sl=14, sr=0, rr=15, tl=39, ssg=0),
+            FMOperator(mul=4, dt=6, ar=24, rs=1, dr=9, am=0, sl=6, sr=9, rr=7, tl=36, ssg=0),
+            FMOperator(mul=2, dt=7, ar=31, rs=3, dr=23, am=0, sl=9, sr=15, rr=1, tl=4, ssg=0),
+            FMOperator(mul=1, dt=3, ar=27, rs=2, dr=4, am=0, sl=10, sr=4, rr=6, tl=2, ssg=0),
         ]
 
         preset = Preset(
@@ -46,7 +46,7 @@ class TestSysExGenerator:
             0x05,  # Feedback (5)
             0x01,  # LFO AMS (1)
             0x03,  # LFO FMS (3)
-            # Operator 1: mul=1, dt1=2, ar=31, rs=1, d1r=15, am=0, d1l=14, d2r=0, rr=15, tl=39, ssg=0
+            # Operator 1: mul=1, dt=2, ar=31, rs=1, dr=15, am=0, sl=14, sr=0, rr=15, tl=39, ssg=0
             0x01,
             0x02,
             0x1F,
@@ -58,7 +58,7 @@ class TestSysExGenerator:
             0x0F,
             0x27,
             0x00,
-            # Operator 2: mul=4, dt1=6, ar=24, rs=1, d1r=9, am=0, d1l=6, d2r=9, rr=7, tl=36, ssg=0
+            # Operator 2: mul=4, dt=6, ar=24, rs=1, dr=9, am=0, sl=6, sr=9, rr=7, tl=36, ssg=0
             0x04,
             0x06,
             0x18,
@@ -70,7 +70,7 @@ class TestSysExGenerator:
             0x07,
             0x24,
             0x00,
-            # Operator 3: mul=2, dt1=7, ar=31, rs=3, d1r=23, am=0, d1l=9, d2r=15, rr=1, tl=4, ssg=0
+            # Operator 3: mul=2, dt=7, ar=31, rs=3, dr=23, am=0, sl=9, sr=15, rr=1, tl=4, ssg=0
             0x02,
             0x07,
             0x1F,
@@ -82,7 +82,7 @@ class TestSysExGenerator:
             0x01,
             0x04,
             0x00,
-            # Operator 4: mul=1, dt1=3, ar=27, rs=2, d1r=4, am=0, d1l=10, d2r=4, rr=6, tl=2, ssg=0
+            # Operator 4: mul=1, dt=3, ar=27, rs=2, dr=4, am=0, sl=10, sr=4, rr=6, tl=2, ssg=0
             0x01,
             0x03,
             0x1B,
@@ -106,8 +106,8 @@ class TestSysExGenerator:
 
         # Create DMP preset with 2 operators
         operators = [
-            FMOperator(mul=3, dt1=1, ar=20, rs=2, d1r=10, am=1, d1l=8, d2r=5, rr=12, tl=50, ssg=2),
-            FMOperator(mul=7, dt1=4, ar=25, rs=1, d1r=8, am=0, d1l=12, d2r=7, rr=9, tl=30, ssg=0),
+            FMOperator(mul=3, dt=1, ar=20, rs=2, dr=10, am=1, sl=8, sr=5, rr=12, tl=50, ssg=2),
+            FMOperator(mul=7, dt=4, ar=25, rs=1, dr=8, am=0, sl=12, sr=7, rr=9, tl=30, ssg=0),
         ]
 
         preset = Preset(
@@ -136,7 +136,7 @@ class TestSysExGenerator:
             0x07,  # Feedback (7)
             0x01,  # LFO AMS (1)
             0x02,  # LFO FMS (2)
-            # Operator 1: mul=3, dt1=1, ar=20, rs=2, d1r=10, am=1, d1l=8, d2r=5, rr=12, tl=50, ssg=2
+            # Operator 1: mul=3, dt=1, ar=20, rs=2, dr=10, am=1, sl=8, sr=5, rr=12, tl=50, ssg=2
             0x03,
             0x01,
             0x14,
@@ -148,7 +148,7 @@ class TestSysExGenerator:
             0x0C,
             0x32,
             0x02,
-            # Operator 2: mul=7, dt1=4, ar=25, rs=1, d1r=8, am=0, d1l=12, d2r=7, rr=9, tl=30, ssg=0
+            # Operator 2: mul=7, dt=4, ar=25, rs=1, dr=8, am=0, sl=12, sr=7, rr=9, tl=30, ssg=0
             0x07,
             0x04,
             0x19,
@@ -196,10 +196,10 @@ class TestSysExGenerator:
 
         # Create WOPN preset with all 4 operators
         operators = [
-            FMOperator(mul=2, dt1=3, ar=30, rs=0, d1r=12, am=0, d1l=5, d2r=8, rr=14, tl=20, ssg=1),
-            FMOperator(mul=1, dt1=0, ar=28, rs=1, d1r=10, am=1, d1l=7, d2r=6, rr=11, tl=40, ssg=0),
-            FMOperator(mul=5, dt1=2, ar=26, rs=2, d1r=14, am=0, d1l=9, d2r=10, rr=8, tl=15, ssg=3),
-            FMOperator(mul=3, dt1=1, ar=22, rs=1, d1r=6, am=0, d1l=3, d2r=4, rr=13, tl=60, ssg=0),
+            FMOperator(mul=2, dt=3, ar=30, rs=0, dr=12, am=0, sl=5, sr=8, rr=14, tl=20, ssg=1),
+            FMOperator(mul=1, dt=0, ar=28, rs=1, dr=10, am=1, sl=7, sr=6, rr=11, tl=40, ssg=0),
+            FMOperator(mul=5, dt=2, ar=26, rs=2, dr=14, am=0, sl=9, sr=10, rr=8, tl=15, ssg=3),
+            FMOperator(mul=3, dt=1, ar=22, rs=1, dr=6, am=0, sl=3, sr=4, rr=13, tl=60, ssg=0),
         ]
 
         preset = Preset(
@@ -228,7 +228,7 @@ class TestSysExGenerator:
             0x03,  # Feedback (3)
             0x02,  # LFO AMS (2)
             0x01,  # LFO FMS (1)
-            # Operator 1: mul=2, dt1=3, ar=30, rs=0, d1r=12, am=0, d1l=5, d2r=8, rr=14, tl=20, ssg=1
+            # Operator 1: mul=2, dt=3, ar=30, rs=0, dr=12, am=0, sl=5, sr=8, rr=14, tl=20, ssg=1
             0x02,
             0x03,
             0x1E,
@@ -240,7 +240,7 @@ class TestSysExGenerator:
             0x0E,
             0x14,
             0x01,
-            # Operator 2: mul=1, dt1=0, ar=28, rs=1, d1r=10, am=1, d1l=7, d2r=6, rr=11, tl=40, ssg=0
+            # Operator 2: mul=1, dt=0, ar=28, rs=1, dr=10, am=1, sl=7, sr=6, rr=11, tl=40, ssg=0
             0x01,
             0x00,
             0x1C,
@@ -252,7 +252,7 @@ class TestSysExGenerator:
             0x0B,
             0x28,
             0x00,
-            # Operator 3: mul=5, dt1=2, ar=26, rs=2, d1r=14, am=0, d1l=9, d2r=10, rr=8, tl=15, ssg=3
+            # Operator 3: mul=5, dt=2, ar=26, rs=2, dr=14, am=0, sl=9, sr=10, rr=8, tl=15, ssg=3
             0x05,
             0x02,
             0x1A,
@@ -264,7 +264,7 @@ class TestSysExGenerator:
             0x08,
             0x0F,
             0x03,
-            # Operator 4: mul=3, dt1=1, ar=22, rs=1, d1r=6, am=0, d1l=3, d2r=4, rr=13, tl=60, ssg=0
+            # Operator 4: mul=3, dt=1, ar=22, rs=1, dr=6, am=0, sl=3, sr=4, rr=13, tl=60, ssg=0
             0x03,
             0x01,
             0x16,
@@ -288,7 +288,7 @@ class TestSysExGenerator:
 
         # Create preset with only 1 operator
         operators = [
-            FMOperator(mul=1, dt1=2, ar=31, rs=1, d1r=15, am=0, d1l=14, d2r=0, rr=15, tl=39, ssg=0),
+            FMOperator(mul=1, dt=2, ar=31, rs=1, dr=15, am=0, sl=14, sr=0, rr=15, tl=39, ssg=0),
         ]
 
         preset = Preset(
@@ -315,7 +315,7 @@ class TestSysExGenerator:
             0x00,  # Feedback (0)
             0x00,  # LFO AMS (0)
             0x00,  # LFO FMS (0)
-            # Operator 1: mul=1, dt1=2, ar=31, rs=1, d1r=15, am=0, d1l=14, d2r=0, rr=15, tl=39, ssg=0
+            # Operator 1: mul=1, dt=2, ar=31, rs=1, dr=15, am=0, sl=14, sr=0, rr=15, tl=39, ssg=0
             0x01,
             0x02,
             0x1F,

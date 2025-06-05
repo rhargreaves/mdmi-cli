@@ -20,13 +20,13 @@ class FMOperator:
     """FM operator parameters compatible with MDMI SysEx."""
 
     mul: int  # Multiple
-    dt1: int  # Detune 1 (mapped from dt)
+    dt: int  # Detune
     ar: int  # Attack Rate
     rs: int  # Rate Scaling
-    d1r: int  # Decay 1 Rate (mapped from dr)
+    dr: int  # Decay Rate
     am: int  # Amplitude Modulation
-    d1l: int  # Decay 1 Level (mapped from sl)
-    d2r: int  # Decay 2 Rate
+    sl: int  # Sustain Level
+    sr: int  # Sustain Rate
     rr: int  # Release Rate
     tl: int  # Total Level
     ssg: int  # SSG-EG
@@ -77,13 +77,13 @@ def _convert_fm_operator(fm_op) -> FMOperator:
     """Convert FmOperator to MDMI-compatible FMOperator."""
     return FMOperator(
         mul=getattr(fm_op, "mul", 0),
-        dt1=getattr(fm_op, "dt", 0),  # Map dt to dt1
+        dt=getattr(fm_op, "dt", 0),
         ar=getattr(fm_op, "ar", 0),
         rs=getattr(fm_op, "rs", 0),
-        d1r=getattr(fm_op, "dr", 0),  # Map dr to d1r
+        dr=getattr(fm_op, "dr", 0),
         am=getattr(fm_op, "am", 0),
-        d1l=getattr(fm_op, "sl", 0),  # Map sl to d1l
-        d2r=getattr(fm_op, "d2r", 0),
+        sl=getattr(fm_op, "sl", 0),
+        sr=getattr(fm_op, "sr", 0),
         rr=getattr(fm_op, "rr", 0),
         tl=getattr(fm_op, "tl", 0),
         ssg=getattr(fm_op, "ssg", 0),
@@ -253,13 +253,13 @@ def parse_dump_response(sysex_data: bytes) -> Preset:
         op_data = sysex_data[op_offset : op_offset + 11]
         operator = FMOperator(
             mul=op_data[0],
-            dt1=op_data[1],
+            dt=op_data[1],
             ar=op_data[2],
             rs=op_data[3],
-            d1r=op_data[4],
+            dr=op_data[4],
             am=op_data[5],
-            d1l=op_data[6],
-            d2r=op_data[7],
+            sl=op_data[6],
+            sr=op_data[7],
             rr=op_data[8],
             tl=op_data[9],
             ssg=op_data[10],
@@ -311,20 +311,20 @@ def write_dmp_preset(preset: Preset, output_path: str) -> None:
         dmp_order = [0, 2, 1, 3]
         for op_idx in dmp_order:
             op = preset.operators[op_idx]
-            # DMP operator format: mul, tl, ar, dr, sl, rr, am, rs, dt, d2r, ssg
+            # DMP operator format: mul, tl, ar, dr, sl, rr, am, rs, dt, sr, ssg
             f.write(
                 bytes(
                     [
                         op.mul,
                         op.tl,
                         op.ar,
-                        op.d1r,  # Map d1r to dr
-                        op.d1l,  # Map d1l to sl
+                        op.dr,
+                        op.sl,
                         op.rr,
                         op.am,
                         op.rs,
-                        op.dt1,  # Map dt1 to dt
-                        op.d2r,
+                        op.dt,
+                        op.sr,
                         op.ssg,
                     ]
                 )
@@ -351,19 +351,19 @@ def write_tfi_preset(preset: Preset, output_path: str) -> None:
 
         # Write 4 operators (10 bytes each)
         for op in preset.operators:
-            # TFI operator format: MUL, DT, TL, RS, AR, DR, D2R, RR, SL, SSG
+            # TFI operator format: MUL, DT, TL, RS, AR, DR, SR, RR, SL, SSG
             f.write(
                 bytes(
                     [
                         op.mul,
-                        op.dt1,  # Map dt1 to dt
+                        op.dt,
                         op.tl,
                         op.rs,
                         op.ar,
-                        op.d1r,  # Map d1r to dr
-                        op.d2r,
+                        op.dr,
+                        op.sr,
                         op.rr,
-                        op.d1l,  # Map d1l to sl
+                        op.sl,
                         op.ssg,
                     ]
                 )

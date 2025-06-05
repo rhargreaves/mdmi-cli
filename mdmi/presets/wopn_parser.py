@@ -48,7 +48,7 @@ def read_operator(f):
     return FmOperator(
         **unpack_dict(
             "p1u3u4" + "p1u7" + "u2p1u5" + "u1p2u5" + "p3u5" + "u4u4" + "p4u4",
-            ["dt", "mul", "tl", "rs", "ar", "am", "dr", "d2r", "sl", "rr", "ssg"],
+            ["dt", "mul", "tl", "rs", "ar", "am", "dr", "sr", "sl", "rr", "ssg"],
             f.read(7),
         )
     )

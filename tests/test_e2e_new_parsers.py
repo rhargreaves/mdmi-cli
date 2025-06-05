@@ -28,7 +28,7 @@ class TestE2ENewParsers:
             tfi_data[offset + 3] = 0  # RS
             tfi_data[offset + 4] = 31  # AR
             tfi_data[offset + 5] = 15  # DR
-            tfi_data[offset + 6] = 0  # D2R
+            tfi_data[offset + 6] = 0  # SR
             tfi_data[offset + 7] = 15  # RR
             tfi_data[offset + 8] = 0  # SL
             tfi_data[offset + 9] = 0  # SSG
@@ -45,7 +45,7 @@ class TestE2ENewParsers:
         # Verify operator mapping
         op = preset.operators[0]
         assert op.mul == 5
-        assert op.dt1 == 1  # dt mapped to dt1
+        assert op.dt == 1  # dt mapped to dt
         assert op.tl == 15
         assert op.ar == 31
 
@@ -106,7 +106,7 @@ class TestE2ENewParsers:
             dmp_data[offset + 6] = 0  # AM
             dmp_data[offset + 7] = 0  # RS
             dmp_data[offset + 8] = 1  # DT
-            dmp_data[offset + 9] = 0  # D2R
+            dmp_data[offset + 9] = 0  # SR
             dmp_data[offset + 10] = 0  # SSG
 
         # Parse the preset
@@ -121,7 +121,7 @@ class TestE2ENewParsers:
         # Verify operator mapping
         op = preset.operators[0]
         assert op.mul == 5
-        assert op.dt1 == 1  # dt mapped to dt1
+        assert op.dt == 1  # dt mapped to dt
         assert op.tl == 15
 
         # Generate SysEx
@@ -185,12 +185,17 @@ class TestE2ENewParsers:
         tfi_data[0] = 2  # Algorithm
         tfi_data[1] = 2  # Feedback
 
-        # Set first operator with known values (TFI format: MUL,DT,TL,RS,AR,DR,D2R,RR,SL,SSG)
+        # Set first operator with known values (TFI format: MUL,DT,TL,RS,AR,DR,SR,RR,SL,SSG)
         tfi_data[2] = 5  # MUL
         tfi_data[3] = 3  # DT
         tfi_data[4] = 64  # TL
         tfi_data[5] = 0  # RS
         tfi_data[6] = 31  # AR
+        tfi_data[7] = 5  # DR
+        tfi_data[8] = 7  # SR
+        tfi_data[9] = 15  # RR
+        tfi_data[10] = 4  # SL
+        tfi_data[11] = 0  # SSG
 
         preset = parse_preset(bytes(tfi_data), "TFI")
 
@@ -198,9 +203,12 @@ class TestE2ENewParsers:
         assert len(preset.operators) >= 1
         op = preset.operators[0]
         assert op.mul == 5
-        assert op.dt1 == 3  # dt mapped to dt1
+        assert op.dt == 3  # dt mapped to dt
         assert op.tl == 64
         assert op.ar == 31
+        assert op.dr == 5  # dr mapped to dr
+        assert op.sl == 4  # sl mapped to sl
+        assert op.sr == 7  # sr mapped to sr
 
         # Generate SysEx and verify operator data is included
         generator = SysExGenerator()
@@ -210,5 +218,5 @@ class TestE2ENewParsers:
         # Operator data starts after: F0 00 22 77 0A 00 00 alg fb ams fms
         operator_start = 11
         assert sysex_data[operator_start] == 5  # MUL
-        assert sysex_data[operator_start + 1] == 3  # DT1
+        assert sysex_data[operator_start + 1] == 3  # DT
         assert sysex_data[operator_start + 2] == 31  # AR

@@ -58,10 +58,12 @@ class TestTFIParser:
 
     def test_parse_invalid_tfi_size(self):
         """Test parsing TFI with wrong size."""
-        # This should still work with BytesIO, but may not have all data
+        # The new parser handles short data gracefully, so no exception expected
         preset = parse_preset(b"\x00" * 10, "TFI")  # Too small for full TFI
+
+        # Should still parse but with minimal data
         assert preset.format_type == "TFI"
-        # Should have parsed with padding
+        assert len(preset.operators) == 4  # Always creates 4 operators
 
 
 class TestDMPParser:
@@ -120,16 +122,32 @@ class TestFMOperator:
 
     def test_create_fm_operator(self):
         """Test creating FMOperator with all fields."""
-        op = FMOperator(mul=1, dt1=2, ar=3, rs=4, d1r=5, am=6, d1l=7, d2r=8, rr=9, tl=10, ssg=11)
+        op = FMOperator(mul=1, dt=2, ar=3, rs=4, dr=5, am=6, sl=7, sr=8, rr=9, tl=10, ssg=11)
 
         assert op.mul == 1
-        assert op.dt1 == 2
+        assert op.dt == 2
         assert op.ar == 3
         assert op.rs == 4
-        assert op.d1r == 5
+        assert op.dr == 5
         assert op.am == 6
-        assert op.d1l == 7
-        assert op.d2r == 8
+        assert op.sl == 7
+        assert op.sr == 8
+        assert op.rr == 9
+        assert op.tl == 10
+        assert op.ssg == 11
+
+    def test_fm_operator_creation(self):
+        """Test creating an FMOperator with all parameters."""
+        op = FMOperator(mul=1, dt=2, ar=3, rs=4, dr=5, am=6, sl=7, sr=8, rr=9, tl=10, ssg=11)
+
+        assert op.mul == 1
+        assert op.dt == 2
+        assert op.ar == 3
+        assert op.rs == 4
+        assert op.dr == 5
+        assert op.am == 6
+        assert op.sl == 7
+        assert op.sr == 8
         assert op.rr == 9
         assert op.tl == 10
         assert op.ssg == 11

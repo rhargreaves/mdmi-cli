@@ -39,7 +39,7 @@ def parse_operator(f):
     return FmOperator(
         **unpack_dict(
             "u8u8u8u8u8u8u8u8u8u8u8",
-            ["mul", "tl", "ar", "dr", "sl", "rr", "am", "rs", "dt", "d2r", "ssg"],
+            ["mul", "tl", "ar", "dr", "sl", "rr", "am", "rs", "dt", "sr", "ssg"],
             f.read(11),
         )
     )

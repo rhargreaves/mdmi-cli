@@ -171,18 +171,18 @@ class FakeMIDIInterface:
 
                     # Realistic FM operator parameters
                     mul = 1 + (base % 15)  # Multiple 1-15
-                    dt1 = base % 8  # Detune 0-7
+                    dt = base % 8  # Detune 0-7
                     ar = 15 + (base % 16)  # Attack Rate 15-31 (reasonable range)
                     rs = base % 4  # Rate Scaling 0-3
-                    d1r = 5 + (base % 16)  # Decay 1 Rate 5-20
+                    dr = 5 + (base % 16)  # Decay Rate 5-20
                     am = base % 2  # AM 0-1
-                    d1l = base % 16  # Decay 1 Level 0-15
-                    d2r = base % 16  # Decay 2 Rate 0-15
+                    sl = base % 16  # Sustain Level 0-15
+                    sr = base % 16  # Sustain Rate 0-15
                     rr = 1 + (base % 16)  # Release Rate 1-16
                     tl = (base % 64) + (op_num * 16)  # Total Level 0-127, higher for higher operators
                     ssg = 0 if base % 3 == 0 else (8 + (base % 8))  # SSG-EG: 0 or 8-15
 
-                    dump_response.extend([mul, dt1, ar, rs, d1r, am, d1l, d2r, rr, tl, ssg])
+                    dump_response.extend([mul, dt, ar, rs, dr, am, sl, sr, rr, tl, ssg])
 
                 dump_response.append(0xF7)
                 dump_response = bytes(dump_response)
