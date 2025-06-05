@@ -3,10 +3,17 @@
 import time
 import signal
 import statistics
+from datetime import datetime
 import click
 import matplotlib.pyplot as plt
 import numpy as np
 from .common import dual_midi_options, get_midi_interface
+
+
+def get_default_histogram_filename():
+    """Generate default histogram filename with timestamp."""
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    return f"perf_hist_{timestamp}.png"
 
 
 class PerformanceTest:
@@ -49,14 +56,14 @@ class PerformanceTest:
 @click.option(
     "--interval",
     type=float,
-    default=0.1,
-    help="Interval between pings in seconds (default: 0.1)",
+    default=0.05,
+    help="Interval between pings in seconds (default: 0.05)",
 )
 @click.option(
-    "--output",
+    "--hist-filename",
     type=click.Path(),
-    default="mdmi_latency_histogram.png",
-    help="Output PNG file for histogram (default: mdmi_latency_histogram.png)",
+    default=None,
+    help="Output PNG file for histogram (default: perf_hist_YYYYMMDD_HHMMSS.png)",
 )
 @click.option(
     "--timeout",
@@ -64,7 +71,7 @@ class PerformanceTest:
     default=2.0,
     help="Timeout for individual ping responses (default: 2.0)",
 )
-def perf_test(midi_out, midi_in, dry_run, duration, interval, output, timeout):
+def perf_test(midi_out, midi_in, dry_run, duration, interval, hist_filename, timeout):
     """Continuously test MDMI ping/pong latency and generate performance histogram.
 
     This command sends continuous ping requests to MDMI and measures round-trip
@@ -83,6 +90,10 @@ def perf_test(midi_out, midi_in, dry_run, duration, interval, output, timeout):
     signal.signal(signal.SIGINT, signal_handler)
 
     try:
+        # Set default histogram filename if not provided
+        if hist_filename is None:
+            hist_filename = get_default_histogram_filename()
+
         # Get MIDI interface
         interface = get_midi_interface(midi_out, midi_in, dry_run)
 
@@ -188,8 +199,8 @@ def perf_test(midi_out, midi_in, dry_run, duration, interval, output, timeout):
                 click.echo(f"  99th %ile: {p99:.2f} ms")
 
             # Generate histogram
-            generate_histogram(perf.latencies, output, stats)
-            click.echo(f"\n📊 Histogram saved to: {output}")
+            generate_histogram(perf.latencies, hist_filename, stats)
+            click.echo(f"\n📊 Histogram saved to: {hist_filename}")
         else:
             click.echo("❌ No successful pings recorded - cannot generate histogram")
 

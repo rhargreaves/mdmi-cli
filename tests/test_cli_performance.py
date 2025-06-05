@@ -127,7 +127,7 @@ class TestCLIPerfTest:
         assert "Continuously test MDMI ping/pong latency" in result.output
         assert "--duration" in result.output
         assert "--interval" in result.output
-        assert "--output" in result.output
+        assert "--hist-filename" in result.output
         assert "--timeout" in result.output
         assert "Press Ctrl+C to stop" in result.output
 
@@ -198,7 +198,7 @@ class TestCLIPerfTest:
                 "0.05",
                 "--timeout",
                 "1.5",
-                "--output",
+                "--hist-filename",
                 "custom_test.png",
             ],
         )
