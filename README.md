@@ -40,7 +40,7 @@ mdmi load-preset example.dmp --program 5 --midi-out "IAC Driver Bus 1"
 mdmi load-preset soundbank.wopn --program 10 --bank 0 --instrument 5 --bank-type melody
 
 # Test with fake interface (for development)
-mdmi load-preset example.tfi --program 0 --fake
+mdmi load-preset example.tfi --program 0 --dry-run
 ```
 
 ### WOPN file management

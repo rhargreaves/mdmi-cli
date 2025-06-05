@@ -100,7 +100,7 @@ class TestCLI:
         mock_fake_midi.return_value = mock_interface
 
         runner = CliRunner()
-        result = runner.invoke(main, ["load-preset", "tests/data/sample.tfi", "--program", "0", "--fake"])
+        result = runner.invoke(main, ["load-preset", "tests/data/sample.tfi", "--program", "0", "--dry-run"])
 
         assert result.exit_code == 0
         assert "Successfully loaded" in result.output
@@ -122,7 +122,7 @@ class TestCLI:
         runner = CliRunner(env=env)
 
         # Don't specify --port, should use environment variable
-        result = runner.invoke(main, ["load-preset", "tests/data/sample.tfi", "--program", "0", "--fake"])
+        result = runner.invoke(main, ["load-preset", "tests/data/sample.tfi", "--program", "0", "--dry-run"])
 
         assert result.exit_code == 0
         assert "Successfully loaded" in result.output
@@ -165,7 +165,7 @@ class TestCLI:
         mock_detect.return_value = "UNKNOWN"
 
         runner = CliRunner()
-        result = runner.invoke(main, ["load-preset", "tests/data/sample.tfi", "--program", "0", "--fake"])
+        result = runner.invoke(main, ["load-preset", "tests/data/sample.tfi", "--program", "0", "--dry-run"])
 
         assert result.exit_code != 0
         assert "Unsupported" in result.output
@@ -186,7 +186,7 @@ class TestCLI:
         mock_fake_midi.return_value = mock_interface
 
         runner = CliRunner()
-        result = runner.invoke(main, ["clear-preset", "--program", "5", "--fake"])
+        result = runner.invoke(main, ["clear-preset", "--program", "5", "--dry-run"])
 
         assert result.exit_code == 0
         assert "Successfully cleared preset 5" in result.output
@@ -202,7 +202,7 @@ class TestCLI:
         env = {"MDMI_MIDI_PORT": "Env Test Port"}
         runner = CliRunner(env=env)
 
-        result = runner.invoke(main, ["clear-preset", "--program", "5", "--fake"])
+        result = runner.invoke(main, ["clear-preset", "--program", "5", "--dry-run"])
 
         assert result.exit_code == 0
         assert "Successfully cleared preset 5" in result.output
@@ -232,7 +232,7 @@ class TestCLI:
         mock_fake_midi.return_value = mock_interface
 
         runner = CliRunner()
-        result = runner.invoke(main, ["clear-all-presets", "--fake", "--confirm"])
+        result = runner.invoke(main, ["clear-all-presets", "--dry-run", "--confirm"])
 
         assert result.exit_code == 0
         assert "Successfully cleared all presets" in result.output
@@ -248,7 +248,7 @@ class TestCLI:
         env = {"MDMI_MIDI_PORT": "Env Test Port"}
         runner = CliRunner(env=env)
 
-        result = runner.invoke(main, ["clear-all-presets", "--fake", "--confirm"])
+        result = runner.invoke(main, ["clear-all-presets", "--dry-run", "--confirm"])
 
         assert result.exit_code == 0
         assert "Successfully cleared all presets" in result.output
@@ -261,7 +261,7 @@ class TestCLI:
         mock_fake_midi.return_value = mock_interface
 
         runner = CliRunner()
-        result = runner.invoke(main, ["clear-all-presets", "--fake"], input="y\n")
+        result = runner.invoke(main, ["clear-all-presets", "--dry-run"], input="y\n")
 
         assert result.exit_code == 0
         assert "Successfully cleared all presets" in result.output
@@ -274,7 +274,7 @@ class TestCLI:
         mock_fake_midi.return_value = mock_interface
 
         runner = CliRunner()
-        result = runner.invoke(main, ["clear-all-presets", "--fake"], input="n\n")
+        result = runner.invoke(main, ["clear-all-presets", "--dry-run"], input="n\n")
 
         assert result.exit_code != 0
         mock_interface.send_sysex.assert_not_called()
@@ -367,7 +367,7 @@ class TestCLI:
         mock_fake_midi.return_value = mock_interface
 
         runner = CliRunner()
-        result = runner.invoke(main, ["ping", "--fake"])
+        result = runner.invoke(main, ["ping", "--dry-run"])
 
         assert result.exit_code == 0
         assert "Sending ping to Fake MIDI Interface" in result.output
@@ -390,7 +390,7 @@ class TestCLI:
         mock_fake_midi.return_value = mock_interface
 
         runner = CliRunner()
-        result = runner.invoke(main, ["ping", "--fake", "--timeout", "0.1"])
+        result = runner.invoke(main, ["ping", "--dry-run", "--timeout", "0.1"])
 
         assert result.exit_code != 0
         assert "❌ No pong response received" in result.output
@@ -406,7 +406,7 @@ class TestCLI:
         mock_fake_midi.return_value = mock_interface
 
         runner = CliRunner()
-        result = runner.invoke(main, ["ping", "--fake"])
+        result = runner.invoke(main, ["ping", "--dry-run"])
 
         assert result.exit_code != 0
         assert "❌ Unexpected response:" in result.output
@@ -422,7 +422,7 @@ class TestCLI:
         mock_fake_midi.return_value = mock_interface
 
         runner = CliRunner()
-        result = runner.invoke(main, ["ping", "--fake", "--timeout", "2.5"])
+        result = runner.invoke(main, ["ping", "--dry-run", "--timeout", "2.5"])
 
         assert result.exit_code == 0
         assert "timeout: 2.5s" in result.output
@@ -433,7 +433,7 @@ class TestCLI:
         """Test ping command with environment variables."""
         runner = CliRunner()
         env = {"MDMI_MIDI_OUT": "Test Out Port", "MDMI_MIDI_IN": "Test In Port"}
-        result = runner.invoke(main, ["ping", "--fake"], env=env)
+        result = runner.invoke(main, ["ping", "--dry-run"], env=env)
 
         assert result.exit_code == 0
         assert "✅ Pong received!" in result.output

@@ -10,6 +10,7 @@ alwaysApply: true
 - Don't change naming schemes without explicit instruction
 - Don't add comments in code blocks for explanations
 
+- Run and fix all tests after any new feature is implemented or the code is changed.
 - Follow strict TDD for new features/fixes
 - After test passes, ask me if I want to commit the code
 - Update the README.md file after each change

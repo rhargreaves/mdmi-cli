@@ -43,7 +43,7 @@ run-example:
 	@echo "Creating example TFI file..."
 	@python3 -c "import pathlib; pathlib.Path('example.tfi').write_bytes(b'\\x23' + b'\\x00' * 41)"
 	@echo "Loading preset with fake interface..."
-	mdmi load-preset example.tfi --channel 0 --fake
+	mdmi load-preset example.tfi --program 0 --dry-run
 	@echo "Cleaning up..."
 	@rm -f example.tfi
 .PHONY: run-example
