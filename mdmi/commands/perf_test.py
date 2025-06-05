@@ -242,7 +242,12 @@ def generate_histogram(latencies, output_path, stats):
     plt.xlabel("Latency (ms)")
     plt.ylabel("Frequency")
     plt.title("MDMI Ping/Pong Latency Distribution")
-    plt.legend()
+
+    # Only add legend if there are labeled artists
+    handles, labels = plt.gca().get_legend_handles_labels()
+    if handles:
+        plt.legend()
+
     plt.grid(True, alpha=0.3)
 
     # Save the plot

@@ -8,8 +8,6 @@ This file has been split into more focused test modules:
 """
 
 
-
-
 def setup_virtual_clock():
     """Set up a virtual clock for performance tests that don't rely on real time.
 
