@@ -4,7 +4,7 @@ from typing import List, Optional
 import time
 
 
-class FakeMIDIInterface:
+class FakeMidiInterface:
     """Fake MIDI interface for testing."""
 
     def __init__(self):
@@ -22,7 +22,7 @@ class FakeMIDIInterface:
         """
         # Print the SysEx message for debugging
         hex_data = " ".join(f"{b:02X}" for b in data)
-        print(f"FakeMIDIInterface: Sending SysEx ({len(data)} bytes): {hex_data}")
+        print(f"FakeMidiInterface: Sending SysEx ({len(data)} bytes): {hex_data}")
 
         self.sent_messages.append(data)
 

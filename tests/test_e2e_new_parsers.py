@@ -4,7 +4,7 @@ import pytest
 
 from mdmi.preset_parsers import detect_preset_format, parse_preset
 from mdmi.sysex_generator import SysExGenerator
-from mdmi.fake_midi_interface import FakeMIDIInterface
+from mdmi.fake_midi_interface import FakeMidiInterface
 
 
 class TestE2ENewParsers:
@@ -71,7 +71,7 @@ class TestE2ENewParsers:
         assert sysex_data[operator_start + 2] == 31  # AR
 
         # Send via fake MIDI interface
-        interface = FakeMIDIInterface()
+        interface = FakeMidiInterface()
         interface.send_sysex(sysex_data)
 
         # Verify it was sent
@@ -139,7 +139,7 @@ class TestE2ENewParsers:
         assert sysex_data[-1] == 0xF7  # SysEx end
 
         # Send via fake MIDI interface
-        interface = FakeMIDIInterface()
+        interface = FakeMidiInterface()
         interface.send_sysex(sysex_data)
 
         # Verify it was sent

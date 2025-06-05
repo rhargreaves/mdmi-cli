@@ -90,7 +90,7 @@ class TestCLI:
 
     @patch("pathlib.Path.read_bytes")
     @patch("mdmi.preset_parsers.detect_preset_format")
-    @patch("mdmi.commands.common.FakeMIDIInterface")
+    @patch("mdmi.commands.common.FakeMidiInterface")
     def test_load_preset_tfi_fake_interface(self, mock_fake_midi, mock_detect, mock_read):
         """Test loading TFI preset with fake interface."""
         # Setup mocks
@@ -108,7 +108,7 @@ class TestCLI:
 
     @patch("pathlib.Path.read_bytes")
     @patch("mdmi.preset_parsers.detect_preset_format")
-    @patch("mdmi.commands.common.FakeMIDIInterface")
+    @patch("mdmi.commands.common.FakeMidiInterface")
     def test_load_preset_with_env_port(self, mock_fake_midi, mock_detect, mock_read):
         """Test loading preset using MDMI_MIDI_PORT environment variable."""
         # Setup mocks
@@ -131,7 +131,7 @@ class TestCLI:
     @patch("pathlib.Path.read_bytes")
     @patch("mdmi.preset_parsers.detect_preset_format")
     @patch("mido.get_output_names")
-    @patch("mdmi.commands.common.MIDIInterface")
+    @patch("mdmi.commands.common.MidoMidiInterface")
     def test_load_preset_real_interface(self, mock_midi, mock_ports, mock_detect, mock_read):
         """Test loading preset with real MIDI interface."""
         # Setup mocks
@@ -179,7 +179,7 @@ class TestCLI:
         assert "Clear a specific user preset" in result.output
         assert "MDMI_MIDI_OUT" in result.output
 
-    @patch("mdmi.commands.common.FakeMIDIInterface")
+    @patch("mdmi.commands.common.FakeMidiInterface")
     def test_clear_preset_fake_interface(self, mock_fake_midi):
         """Test clearing preset with fake interface."""
         mock_interface = Mock()
@@ -192,7 +192,7 @@ class TestCLI:
         assert "Successfully cleared preset 5" in result.output
         mock_interface.send_sysex.assert_called_once()
 
-    @patch("mdmi.commands.common.FakeMIDIInterface")
+    @patch("mdmi.commands.common.FakeMidiInterface")
     def test_clear_preset_with_env_port(self, mock_fake_midi):
         """Test clearing preset using MDMI_MIDI_PORT environment variable."""
         mock_interface = Mock()
@@ -225,7 +225,7 @@ class TestCLI:
         assert "Clear all user presets" in result.output
         assert "MDMI_MIDI_OUT" in result.output
 
-    @patch("mdmi.commands.common.FakeMIDIInterface")
+    @patch("mdmi.commands.common.FakeMidiInterface")
     def test_clear_all_presets_with_confirm(self, mock_fake_midi):
         """Test clearing all presets with --confirm flag."""
         mock_interface = Mock()
@@ -238,7 +238,7 @@ class TestCLI:
         assert "Successfully cleared all presets" in result.output
         mock_interface.send_sysex.assert_called_once()
 
-    @patch("mdmi.commands.common.FakeMIDIInterface")
+    @patch("mdmi.commands.common.FakeMidiInterface")
     def test_clear_all_presets_with_env_port(self, mock_fake_midi):
         """Test clearing all presets using MDMI_MIDI_PORT environment variable."""
         mock_interface = Mock()
@@ -254,7 +254,7 @@ class TestCLI:
         assert "Successfully cleared all presets" in result.output
         mock_interface.send_sysex.assert_called_once()
 
-    @patch("mdmi.commands.common.FakeMIDIInterface")
+    @patch("mdmi.commands.common.FakeMidiInterface")
     def test_clear_all_presets_with_user_confirmation(self, mock_fake_midi):
         """Test clearing all presets with user confirmation."""
         mock_interface = Mock()
@@ -267,7 +267,7 @@ class TestCLI:
         assert "Successfully cleared all presets" in result.output
         mock_interface.send_sysex.assert_called_once()
 
-    @patch("mdmi.commands.common.FakeMIDIInterface")
+    @patch("mdmi.commands.common.FakeMidiInterface")
     def test_clear_all_presets_user_aborts(self, mock_fake_midi):
         """Test clearing all presets when user aborts."""
         mock_interface = Mock()
@@ -322,11 +322,11 @@ class TestCLI:
         assert "Show all instruments" in result.output
 
     def test_fake_interface_debug_output(self):
-        """Test that FakeMIDIInterface prints SysEx debug information."""
-        from mdmi.fake_midi_interface import FakeMIDIInterface
+        """Test that FakeMidiInterface prints SysEx debug information."""
+        from mdmi.fake_midi_interface import FakeMidiInterface
 
         # Create a fake interface
-        fake_interface = FakeMIDIInterface()
+        fake_interface = FakeMidiInterface()
 
         # Capture stdout
         captured_output = io.StringIO()
@@ -339,7 +339,7 @@ class TestCLI:
         output = captured_output.getvalue()
 
         # Verify debug output format
-        assert "FakeMIDIInterface: Sending SysEx" in output
+        assert "FakeMidiInterface: Sending SysEx" in output
         assert "8 bytes" in output  # Our test message is 8 bytes
         assert "F0 00 22 77 0A 00 2A F7" in output
 
@@ -358,7 +358,7 @@ class TestCLI:
         assert "MDMI_MIDI_OUT" in result.output
         assert "MDMI_MIDI_IN" in result.output
 
-    @patch("mdmi.commands.common.FakeMIDIInterface")
+    @patch("mdmi.commands.common.FakeMidiInterface")
     def test_ping_fake_interface_success(self, mock_fake_midi):
         """Test ping command with successful fake interface response."""
         mock_interface = Mock()
@@ -381,7 +381,7 @@ class TestCLI:
         expected_ping = bytes([0xF0, 0x00, 0x22, 0x77, 0x01, 0xF7])
         assert sent_ping == expected_ping
 
-    @patch("mdmi.commands.common.FakeMIDIInterface")
+    @patch("mdmi.commands.common.FakeMidiInterface")
     def test_ping_fake_interface_timeout(self, mock_fake_midi):
         """Test ping command with timeout (no pong response)."""
         mock_interface = Mock()
@@ -396,7 +396,7 @@ class TestCLI:
         assert "❌ No pong response received" in result.output
         assert "MDMI is not connected" in result.output
 
-    @patch("mdmi.commands.common.FakeMIDIInterface")
+    @patch("mdmi.commands.common.FakeMidiInterface")
     def test_ping_fake_interface_wrong_response(self, mock_fake_midi):
         """Test ping command with unexpected response."""
         mock_interface = Mock()
@@ -413,7 +413,7 @@ class TestCLI:
         assert "F0 00 22 77 99 F7" in result.output
         assert "Expected pong: F0 00 22 77 02 F7" in result.output
 
-    @patch("mdmi.commands.common.FakeMIDIInterface")
+    @patch("mdmi.commands.common.FakeMidiInterface")
     def test_ping_with_custom_timeout(self, mock_fake_midi):
         """Test ping command with custom timeout value."""
         mock_interface = Mock()

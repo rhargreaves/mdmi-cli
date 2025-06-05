@@ -5,7 +5,7 @@ from pathlib import Path
 
 from mdmi.preset_parsers import detect_preset_format, parse_preset, list_wopn_contents
 from mdmi.sysex_generator import SysExGenerator
-from mdmi.fake_midi_interface import FakeMIDIInterface
+from mdmi.fake_midi_interface import FakeMidiInterface
 
 
 class TestRealData:
@@ -38,7 +38,7 @@ class TestRealData:
         assert sysex_data[-1] == 0xF7  # SysEx end
 
         # Test MIDI interface
-        interface = FakeMIDIInterface()
+        interface = FakeMidiInterface()
         interface.send_sysex(sysex_data)
         sent_sysex = interface.get_last_sysex()
         assert sent_sysex == sysex_data

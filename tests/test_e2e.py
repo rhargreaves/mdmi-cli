@@ -5,7 +5,7 @@ import tempfile
 
 from mdmi.preset_parsers import detect_preset_format, parse_preset
 from mdmi.sysex_generator import SysExGenerator
-from mdmi.fake_midi_interface import FakeMIDIInterface
+from mdmi.fake_midi_interface import FakeMidiInterface
 
 
 class TestE2E:
@@ -36,7 +36,7 @@ class TestE2E:
         sysex_data = generator.generate_preset_load(preset, program=5)
 
         # Send via fake interface
-        interface = FakeMIDIInterface()
+        interface = FakeMidiInterface()
         interface.send_sysex(sysex_data)
 
         # Verify
@@ -73,7 +73,7 @@ class TestE2E:
         sysex_data = generator.generate_preset_load(preset, program=10)
 
         # Send via fake interface
-        interface = FakeMIDIInterface()
+        interface = FakeMidiInterface()
         interface.send_sysex(sysex_data)
 
         # Verify
@@ -86,7 +86,7 @@ class TestE2E:
 
     def test_multiple_presets_e2e(self):
         """Test loading multiple presets to different programs."""
-        interface = FakeMIDIInterface()
+        interface = FakeMidiInterface()
         generator = SysExGenerator()
 
         # Load TFI to program 0
@@ -143,7 +143,7 @@ class TestE2E:
             generator = SysExGenerator()
             sysex_data = generator.generate_preset_load(preset, program=15)
 
-            interface = FakeMIDIInterface()
+            interface = FakeMidiInterface()
             interface.send_sysex(sysex_data)
 
             # Verify

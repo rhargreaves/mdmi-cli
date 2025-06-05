@@ -2,8 +2,9 @@
 
 import click
 import os
-from mdmi.midi_interface import MIDIInterface
-from mdmi.fake_midi_interface import FakeMIDIInterface
+from mdmi.mido_midi_interface import MidoMidiInterface
+from mdmi.fake_midi_interface import FakeMidiInterface
+from mdmi.midi_interface import MidiInterface
 
 
 def get_default_output_port():
@@ -48,7 +49,7 @@ def ping_options(func):
     return func
 
 
-def get_midi_interface(midi_out, dry_run):
+def get_midi_interface(midi_out, dry_run) -> MidiInterface:
     """Get the appropriate MIDI interface based on options.
 
     Args:
@@ -56,12 +57,12 @@ def get_midi_interface(midi_out, dry_run):
         dry_run: Whether to use fake interface
 
     Returns:
-        MIDIInterface or FakeMIDIInterface instance
+        MIDI interface instance conforming to MIDIInterface
     """
     if dry_run:
-        return FakeMIDIInterface()
+        return FakeMidiInterface()
     else:
-        return MIDIInterface(midi_out)
+        return MidoMidiInterface(midi_out)
 
 
 def get_ping_interface(midi_out, midi_in, dry_run):
@@ -73,9 +74,9 @@ def get_ping_interface(midi_out, midi_in, dry_run):
         dry_run: Whether to use fake interface
 
     Returns:
-        MIDIInterface or FakeMIDIInterface instance
+        MIDIInterface or FakeMidiInterface instance
     """
     if dry_run:
-        return FakeMIDIInterface()
+        return FakeMidiInterface()
     else:
-        return MIDIInterface(midi_out, midi_in)
+        return MidoMidiInterface(midi_out, midi_in)

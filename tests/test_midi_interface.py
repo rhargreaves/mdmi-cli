@@ -3,8 +3,8 @@
 import pytest
 from unittest.mock import Mock, patch
 
-from mdmi.midi_interface import MIDIInterface
-from mdmi.fake_midi_interface import FakeMIDIInterface
+from mdmi.mido_midi_interface import MidoMidiInterface
+from mdmi.fake_midi_interface import FakeMidiInterface
 
 
 class TestMIDIInterface:
@@ -20,7 +20,7 @@ class TestMIDIInterface:
         mock_port = Mock()
         mock_open_output.return_value = mock_port
 
-        interface = MIDIInterface("Test Port")
+        interface = MidoMidiInterface("Test Port")
 
         assert interface.port_name == "Test Port"
         assert interface.input_port_name == "Test Port"  # Defaults to output port name
@@ -42,7 +42,7 @@ class TestMIDIInterface:
         mock_open_output.return_value = mock_output_port
         mock_open_input.return_value = mock_input_port
 
-        interface = MIDIInterface("Test Out Port", "Test In Port")
+        interface = MidoMidiInterface("Test Out Port", "Test In Port")
 
         assert interface.port_name == "Test Out Port"
         assert interface.input_port_name == "Test In Port"
@@ -58,7 +58,7 @@ class TestMIDIInterface:
         mock_input_names.return_value = []
 
         with pytest.raises(ValueError, match="MIDI output port 'Invalid' not found"):
-            MIDIInterface("Invalid")
+            MidoMidiInterface("Invalid")
 
     @patch("mido.get_input_names")
     @patch("mido.get_output_names")
@@ -71,7 +71,7 @@ class TestMIDIInterface:
         mock_open_output.return_value = mock_port
 
         with pytest.raises(ValueError, match="MIDI input port 'Invalid Input' not found"):
-            MIDIInterface("Test Port", "Invalid Input")
+            MidoMidiInterface("Test Port", "Invalid Input")
 
     @patch("mido.get_input_names")
     @patch("mido.get_output_names")
@@ -83,7 +83,7 @@ class TestMIDIInterface:
         mock_port = Mock()
         mock_open_output.return_value = mock_port
 
-        interface = MIDIInterface("Test Port")
+        interface = MidoMidiInterface("Test Port")
         sysex_data = b"\xf0\x43\x76\x10\x00\x42\xf7"
 
         interface.send_sysex(sysex_data)
@@ -99,14 +99,14 @@ class TestFakeMIDIInterface:
 
     def test_fake_midi_interface_init(self):
         """Test fake MIDI interface initialization."""
-        interface = FakeMIDIInterface()
+        interface = FakeMidiInterface()
 
         assert interface.port_name == "Fake MIDI Interface"
         assert interface.sent_messages == []
 
     def test_fake_send_sysex(self):
         """Test sending SysEx to fake interface."""
-        interface = FakeMIDIInterface()
+        interface = FakeMidiInterface()
         sysex_data = b"\xf0\x43\x76\x10\x00\x42\xf7"
 
         interface.send_sysex(sysex_data)
@@ -116,7 +116,7 @@ class TestFakeMIDIInterface:
 
     def test_fake_get_last_sysex(self):
         """Test getting last SysEx message from fake interface."""
-        interface = FakeMIDIInterface()
+        interface = FakeMidiInterface()
 
         # Send multiple messages
         sysex1 = b"\xf0\x43\x76\x10\x00\x42\xf7"
@@ -129,13 +129,13 @@ class TestFakeMIDIInterface:
 
     def test_fake_get_last_sysex_empty(self):
         """Test getting last SysEx when no messages sent."""
-        interface = FakeMIDIInterface()
+        interface = FakeMidiInterface()
 
         assert interface.get_last_sysex() is None
 
     def test_fake_clear_messages(self):
         """Test clearing sent messages."""
-        interface = FakeMIDIInterface()
+        interface = FakeMidiInterface()
         interface.send_sysex(b"\xf0\x43\x76\x10\x00\x42\xf7")
 
         interface.clear_messages()
