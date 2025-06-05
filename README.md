@@ -13,6 +13,7 @@ CLI for controlling the [Mega Drive MIDI Interface (MDMI)](https://github.com/rh
     * DefleMask preset versions 8, 9 and 11
     * [WOPN](https://github.com/Wohlstand/libOPNMIDI/blob/master/fm_banks/wopn%20specification.txt) versions 1 and 2, as used by libOPNMIDI
     * [TFI](https://vgmrips.net/wiki/TFI_File_Format)
+* Dump presets from MDMI to files (DMP or TFI format)
 * Clear presets. Individual user presets or all presets at once
 * List WOPN instruments
 * Connectivity testing: Ping/pong functionality to test MDMI connectivity
@@ -41,6 +42,25 @@ mdmi load-preset soundbank.wopn --program 10 --bank 0 --instrument 5 --bank-type
 
 # Test with fake interface (for development)
 mdmi load-preset example.tfi --program 0 --dry-run
+```
+
+### Dump presets
+
+```bash
+# Dump preset from program 5 to DMP file (uses MDMI_MIDI_OUT/IN if set)
+mdmi dump-preset --program 5 --format dmp --filename my_preset.dmp
+
+# Dump preset from program 10 to TFI file
+mdmi dump-preset --program 10 --format tfi --filename my_preset.tfi
+
+# Dump with auto-generated filename (preset_5.dmp)
+mdmi dump-preset --program 5
+
+# Test dump with fake interface
+mdmi dump-preset --program 0 --dry-run
+
+# Dump with custom timeout and specific ports
+mdmi dump-preset --program 3 --timeout 10.0 --midi-out "IAC Driver Bus 1" --midi-in "IAC Driver Bus 2"
 ```
 
 ### WOPN file management
@@ -105,7 +125,7 @@ mdmi list-ports
 Most commands support:
 - `--midi-out TEXT`: MIDI output port name (overrides environment variables)
 
-Commands with bidirectional communication (ping) also support:
+Commands with bidirectional communication (`ping`, `dump-preset`) also support:
 - `--midi-in TEXT`: MIDI input port name (overrides `MDMI_MIDI_IN`)
 
 ## Development
