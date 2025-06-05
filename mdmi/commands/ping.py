@@ -19,7 +19,7 @@ from .common import ping_options, get_ping_interface
     hidden=True,
     help="For testing: disable fake interface pong simulation",
 )
-def ping(midi_out, midi_in, fake, timeout, no_response):
+def ping(midi_out, midi_in, dry_run, timeout, no_response):
     """Send a ping to MDMI and measure round-trip latency.
 
     This command sends a ping SysEx message (00 22 77 01) to the MDMI
@@ -27,10 +27,10 @@ def ping(midi_out, midi_in, fake, timeout, no_response):
     """
     try:
         # Get MIDI interface
-        interface = get_ping_interface(midi_out, midi_in, fake)
+        interface = get_ping_interface(midi_out, midi_in, dry_run)
 
         # If testing with no response, disable pong simulation
-        if no_response and fake:
+        if no_response and dry_run:
             interface.simulate_pong = False
 
         # Create ping SysEx message (F0 00 22 77 01 F7)

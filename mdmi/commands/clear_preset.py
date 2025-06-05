@@ -14,7 +14,7 @@ from .common import midi_options, get_midi_interface
     help="MIDI program number to clear (0-127)",
 )
 @midi_options
-def clear_preset(program, midi_out, fake):
+def clear_preset(program, midi_out, dry_run):
     """Clear a specific user preset.
 
     This will reset the specified program number to a default state.
@@ -23,7 +23,7 @@ def clear_preset(program, midi_out, fake):
         generator = SysExGenerator()
         sysex_data = generator.generate_clear_preset(program)
 
-        interface = get_midi_interface(midi_out, fake)
+        interface = get_midi_interface(midi_out, dry_run)
         interface.send_sysex(sysex_data)
         click.echo(f"Successfully cleared preset {program}")
 

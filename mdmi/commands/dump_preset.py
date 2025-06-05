@@ -34,7 +34,7 @@ from .common import ping_options, get_ping_interface
     default=5.0,
     help="Timeout in seconds to wait for dump response (default: 5.0)",
 )
-def dump_preset(program, output_format, filename, midi_out, midi_in, fake, timeout):
+def dump_preset(program, output_format, filename, midi_out, midi_in, dry_run, timeout):
     """Dump a preset from MDMI to a file.
 
     This command sends a dump request to MDMI for the specified program number
@@ -42,7 +42,7 @@ def dump_preset(program, output_format, filename, midi_out, midi_in, fake, timeo
     """
     try:
         # Get MIDI interface
-        interface = get_ping_interface(midi_out, midi_in, fake)
+        interface = get_ping_interface(midi_out, midi_in, dry_run)
 
         # Generate output filename if not specified
         if not filename:

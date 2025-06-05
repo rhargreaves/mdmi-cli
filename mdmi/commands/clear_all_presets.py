@@ -13,7 +13,7 @@ from .common import midi_options, get_midi_interface
     help="Skip confirmation prompt",
 )
 @midi_options
-def clear_all_presets(confirm, midi_out, fake):
+def clear_all_presets(confirm, midi_out, dry_run):
     """Clear all user presets.
 
     This will reset ALL user presets to their default state. Use with caution!
@@ -28,7 +28,7 @@ def clear_all_presets(confirm, midi_out, fake):
         generator = SysExGenerator()
         sysex_data = generator.generate_clear_all_presets()
 
-        interface = get_midi_interface(midi_out, fake)
+        interface = get_midi_interface(midi_out, dry_run)
         interface.send_sysex(sysex_data)
 
         click.echo("Successfully cleared all presets")

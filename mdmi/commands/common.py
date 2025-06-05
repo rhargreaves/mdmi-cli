@@ -29,52 +29,52 @@ midi_in_option = click.option(
     help="MIDI input port name (default: MDMI_MIDI_IN env var)",
 )
 
-fake_option = click.option("--fake", is_flag=True, help="Use fake MIDI interface for testing")
+dry_run_option = click.option("--dry-run", is_flag=True, help="Use fake MIDI interface for testing")
 
 
 def midi_options(func):
-    """Decorator that adds common MIDI options (--midi-out and --fake)."""
-    func = fake_option(func)
+    """Decorator that adds common MIDI options (--midi-out and --dry-run)."""
+    func = dry_run_option(func)
     func = midi_out_option(func)
     return func
 
 
 def ping_options(func):
     """Decorator that adds MIDI options for ping command (includes input port)."""
-    func = fake_option(func)
+    func = dry_run_option(func)
     func = midi_in_option(func)
     func = midi_out_option(func)
     return func
 
 
-def get_midi_interface(midi_out, fake):
+def get_midi_interface(midi_out, dry_run):
     """Get the appropriate MIDI interface based on options.
 
     Args:
         midi_out: Output port name
-        fake: Whether to use fake interface
+        dry_run: Whether to use fake interface
 
     Returns:
         MIDIInterface or FakeMIDIInterface instance
     """
-    if fake:
+    if dry_run:
         return FakeMIDIInterface()
     else:
         return MIDIInterface(midi_out)
 
 
-def get_ping_interface(midi_out, midi_in, fake):
+def get_ping_interface(midi_out, midi_in, dry_run):
     """Get MIDI interface for ping command with separate input/output ports.
 
     Args:
         midi_out: Output port name
         midi_in: Input port name (can be None)
-        fake: Whether to use fake interface
+        dry_run: Whether to use fake interface
 
     Returns:
         MIDIInterface or FakeMIDIInterface instance
     """
-    if fake:
+    if dry_run:
         return FakeMIDIInterface()
     else:
         return MIDIInterface(midi_out, midi_in)
