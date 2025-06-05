@@ -188,7 +188,8 @@ class FakeMIDIInterface:
                 dump_response = bytes(dump_response)
 
                 print(
-                    f"FakeMIDIInterface: Simulating dump response for program {program} (ALG:{algorithm}, FB:{feedback}): {' '.join(f'{b:02X}' for b in dump_response)}"
+                    f"FakeMIDIInterface: Simulating dump response for program {program} "
+                    + f"(ALG:{algorithm}, FB:{feedback}): {' '.join(f'{b:02X}' for b in dump_response)}"
                 )
                 return dump_response
 

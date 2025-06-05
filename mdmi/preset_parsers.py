@@ -3,7 +3,6 @@
 from dataclasses import dataclass
 from typing import List, Optional
 import io
-import struct
 
 from .presets.wopn_parser import parse_wopn
 from .presets.dmp_parser import parse_dmp

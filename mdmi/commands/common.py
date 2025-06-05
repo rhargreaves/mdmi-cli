@@ -29,7 +29,7 @@ midi_in_option = click.option(
     help="MIDI input port name (default: MDMI_MIDI_IN env var)",
 )
 
-dry_run_option = click.option("--dry-run", is_flag=True, help="Use fake MIDI interface for testing")
+dry_run_option = click.option("--dry-run", is_flag=True, help="Use fake MIDI interface and display MIDI messages")
 
 
 def midi_options(func):
