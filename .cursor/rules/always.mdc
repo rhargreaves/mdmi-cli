@@ -13,3 +13,5 @@ alwaysApply: true
 - Follow strict TDD for new features/fixes
 - After test passes, ask me if I want to commit the code
 - Update the README.md file after each change
+
+- The command for Python on this machine is `python3`

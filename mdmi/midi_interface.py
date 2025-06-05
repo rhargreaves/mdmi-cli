@@ -120,22 +120,77 @@ class FakeMIDIInterface:
             timeout: Maximum time to wait in seconds (ignored in fake)
 
         Returns:
-            Simulated pong response if last sent message was a ping
+            Simulated response if last sent message was a ping or dump request
         """
         if not self.simulate_pong:
             return None
 
-        # Check if the last sent message was a ping (00 22 77 01)
-        if self.sent_messages and len(self.sent_messages[-1]) >= 6:
-            last_msg = self.sent_messages[-1]
-            if last_msg[0] == 0xF0 and last_msg[1:5] == bytes([0x00, 0x22, 0x77, 0x01]) and last_msg[-1] == 0xF7:
-                # Simulate a small delay
-                time.sleep(0.01)
+        # Check if we have any sent messages
+        if not self.sent_messages or len(self.sent_messages[-1]) < 6:
+            return None
 
-                # Return a pong response (00 22 77 02)
-                pong_response = bytes([0xF0, 0x00, 0x22, 0x77, 0x02, 0xF7])
-                print(f"FakeMIDIInterface: Simulating pong response: {' '.join(f'{b:02X}' for b in pong_response)}")
-                return pong_response
+        last_msg = self.sent_messages[-1]
+
+        # Must start with F0 00 22 77 and end with F7
+        if last_msg[0] != 0xF0 or last_msg[1:4] != bytes([0x00, 0x22, 0x77]) or last_msg[-1] != 0xF7:
+            return None
+
+        # Simulate a small delay
+        time.sleep(0.01)
+
+        # Check message type
+        cmd = last_msg[4]
+
+        if cmd == 0x01:  # Ping (00 22 77 01)
+            # Return a pong response (00 22 77 02)
+            pong_response = bytes([0xF0, 0x00, 0x22, 0x77, 0x02, 0xF7])
+            print(f"FakeMIDIInterface: Simulating pong response: {' '.join(f'{b:02X}' for b in pong_response)}")
+            return pong_response
+
+        elif cmd == 0x0D:  # Dump request (00 22 77 0D <type> <program>)
+            if len(last_msg) >= 8:
+                preset_type = last_msg[5]  # Should be 0 for FM
+                program = last_msg[6]
+
+                # Generate a fake dump response (00 22 77 0E <type> <program> <preset_data>)
+                dump_response = [0xF0, 0x00, 0x22, 0x77, 0x0E, preset_type, program]
+
+                # Add realistic FM preset data based on program number
+                # Use program number to create variation in the preset
+                algorithm = program % 8  # Algorithm 0-7
+                feedback = (program * 2) % 8  # Feedback 0-7
+                lfo_ams = program % 4  # AMS 0-3
+                lfo_fms = (program * 3) % 8  # FMS 0-7
+
+                dump_response.extend([algorithm, feedback, lfo_ams, lfo_fms])
+
+                # Add 4 realistic operators (11 bytes each)
+                for op_num in range(4):
+                    # Create variation based on program and operator number
+                    base = (program + op_num * 10) % 128
+
+                    # Realistic FM operator parameters
+                    mul = 1 + (base % 15)  # Multiple 1-15
+                    dt1 = base % 8  # Detune 0-7
+                    ar = 15 + (base % 16)  # Attack Rate 15-31 (reasonable range)
+                    rs = base % 4  # Rate Scaling 0-3
+                    d1r = 5 + (base % 16)  # Decay 1 Rate 5-20
+                    am = base % 2  # AM 0-1
+                    d1l = base % 16  # Decay 1 Level 0-15
+                    d2r = base % 16  # Decay 2 Rate 0-15
+                    rr = 1 + (base % 16)  # Release Rate 1-16
+                    tl = (base % 64) + (op_num * 16)  # Total Level 0-127, higher for higher operators
+                    ssg = 0 if base % 3 == 0 else (8 + (base % 8))  # SSG-EG: 0 or 8-15
+
+                    dump_response.extend([mul, dt1, ar, rs, d1r, am, d1l, d2r, rr, tl, ssg])
+
+                dump_response.append(0xF7)
+                dump_response = bytes(dump_response)
+
+                print(
+                    f"FakeMIDIInterface: Simulating dump response for program {program} (ALG:{algorithm}, FB:{feedback}): {' '.join(f'{b:02X}' for b in dump_response)}"
+                )
+                return dump_response
 
         return None
 

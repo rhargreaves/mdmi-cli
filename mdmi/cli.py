@@ -9,6 +9,7 @@ from mdmi.commands import (
     clear_preset,
     clear_all_presets,
     ping,
+    dump_preset,
 )
 
 
@@ -28,6 +29,7 @@ main.add_command(list_wopn)
 main.add_command(clear_preset)
 main.add_command(clear_all_presets)
 main.add_command(ping)
+main.add_command(dump_preset)
 
 
 if __name__ == "__main__":

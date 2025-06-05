@@ -6,5 +6,6 @@ from .list_wopn import list_wopn
 from .clear_preset import clear_preset
 from .clear_all_presets import clear_all_presets
 from .ping import ping
+from .dump_preset import dump_preset
 
-__all__ = ["load_preset", "list_ports", "list_wopn", "clear_preset", "clear_all_presets", "ping"]
+__all__ = ["load_preset", "list_ports", "list_wopn", "clear_preset", "clear_all_presets", "ping", "dump_preset"]

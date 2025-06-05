@@ -10,6 +10,7 @@ class SysExGenerator:
     LOAD_PRESET_CMD = 0x0A
     CLEAR_PRESET_CMD = 0x0B
     CLEAR_ALL_CMD = 0x0C
+    DUMP_PRESET_CMD = 0x0D
     FM_TYPE = 0x00
 
     def generate_preset_load(self, preset: Preset, program: int) -> bytes:
@@ -99,5 +100,25 @@ class SysExGenerator:
         """
         message = [0xF0] + self.MDMI_MANUFACTURER_ID
         message.extend([self.CLEAR_ALL_CMD, self.FM_TYPE, 0xF7])
+
+        return bytes(message)
+
+    def generate_dump_preset_request(self, program: int) -> bytes:
+        """Generate SysEx message to request preset dump.
+
+        Args:
+            program: MIDI program number (0-127) to dump
+
+        Returns:
+            SysEx message as bytes
+
+        Raises:
+            ValueError: If program is invalid
+        """
+        if not (0 <= program <= 127):
+            raise ValueError("Program must be between 0 and 127")
+
+        message = [0xF0] + self.MDMI_MANUFACTURER_ID
+        message.extend([self.DUMP_PRESET_CMD, self.FM_TYPE, program, 0xF7])
 
         return bytes(message)
