@@ -45,7 +45,7 @@ def load_preset(preset_file, program, midi_out, dry_run, bank, instrument, bank_
         generator = SysExGenerator()
         sysex_data = generator.generate_preset_load(preset, program)
 
-        interface = get_midi_interface(midi_out, dry_run)
+        interface = get_midi_interface(midi_out, None, dry_run)
         interface.send_sysex(sysex_data)
 
         if format_type == "WOPN":

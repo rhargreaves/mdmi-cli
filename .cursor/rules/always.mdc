@@ -13,6 +13,6 @@ alwaysApply: true
 - Run and fix all tests after any new feature is implemented or the code is changed.
 - Follow strict TDD for new features/fixes
 - After test passes, ask me if I want to commit the code
-- Update the README.md file after each change
+- Update the README.md file after each change but don't bother documenting anything which the user shouldn't care about
 
 - The command for Python on this machine is `python3`

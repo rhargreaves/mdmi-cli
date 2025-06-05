@@ -41,32 +41,16 @@ def midi_options(func):
     return func
 
 
-def ping_options(func):
-    """Decorator that adds MIDI options for ping command (includes input port)."""
+def dual_midi_options(func):
+    """Decorator that adds MIDI options for commands that need both input and output ports."""
     func = dry_run_option(func)
     func = midi_in_option(func)
     func = midi_out_option(func)
     return func
 
 
-def get_midi_interface(midi_out, dry_run) -> MidiInterface:
+def get_midi_interface(midi_out, midi_in, dry_run) -> MidiInterface:
     """Get the appropriate MIDI interface based on options.
-
-    Args:
-        midi_out: Output port name
-        dry_run: Whether to use fake interface
-
-    Returns:
-        MIDI interface instance conforming to MIDIInterface
-    """
-    if dry_run:
-        return FakeMidiInterface()
-    else:
-        return MidoMidiInterface(midi_out)
-
-
-def get_ping_interface(midi_out, midi_in, dry_run):
-    """Get MIDI interface for ping command with separate input/output ports.
 
     Args:
         midi_out: Output port name
@@ -74,7 +58,7 @@ def get_ping_interface(midi_out, midi_in, dry_run):
         dry_run: Whether to use fake interface
 
     Returns:
-        MIDIInterface or FakeMidiInterface instance
+        MIDI interface instance conforming to MIDIInterface
     """
     if dry_run:
         return FakeMidiInterface()

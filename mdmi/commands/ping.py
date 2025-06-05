@@ -2,11 +2,11 @@
 
 import time
 import click
-from .common import ping_options, get_ping_interface
+from .common import dual_midi_options, get_midi_interface
 
 
 @click.command()
-@ping_options
+@dual_midi_options
 @click.option(
     "--timeout",
     type=float,
@@ -27,7 +27,7 @@ def ping(midi_out, midi_in, dry_run, timeout, no_response):
     """
     try:
         # Get MIDI interface
-        interface = get_ping_interface(midi_out, midi_in, dry_run)
+        interface = get_midi_interface(midi_out, midi_in, dry_run)
 
         # If testing with no response, disable pong simulation
         if no_response and dry_run:

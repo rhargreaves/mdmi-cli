@@ -28,7 +28,7 @@ def clear_all_presets(confirm, midi_out, dry_run):
         generator = SysExGenerator()
         sysex_data = generator.generate_clear_all_presets()
 
-        interface = get_midi_interface(midi_out, dry_run)
+        interface = get_midi_interface(midi_out, None, dry_run)
         interface.send_sysex(sysex_data)
 
         click.echo("Successfully cleared all presets")
