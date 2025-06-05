@@ -8,6 +8,7 @@ from .clear_all_presets import clear_all_presets
 from .ping import ping
 from .dump_preset import dump_preset
 from .dump_channel import dump_channel
+from .perf_test import perf_test
 
 __all__ = [
     "load_preset",
@@ -18,4 +19,5 @@ __all__ = [
     "ping",
     "dump_preset",
     "dump_channel",
+    "perf_test",
 ]

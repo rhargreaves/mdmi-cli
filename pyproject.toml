@@ -23,7 +23,13 @@ classifiers = [
     "Topic :: Multimedia :: Sound/Audio :: MIDI",
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
-dependencies = ["click>=8.0.0", "mido>=1.2.10", "bitstruct>=8.15.0"]
+dependencies = [
+    "click>=8.0.0",
+    "mido>=1.2.10",
+    "bitstruct>=8.15.0",
+    "matplotlib>=3.5.0",
+    "numpy>=1.21.0",
+]
 
 [project.optional-dependencies]
 dev = ["pytest>=7.0.0", "pytest-mock>=3.10.0", "ruff>=0.1.0"]

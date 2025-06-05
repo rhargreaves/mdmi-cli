@@ -11,6 +11,7 @@ from mdmi.commands import (
     ping,
     dump_preset,
     dump_channel,
+    perf_test,
 )
 
 
@@ -32,6 +33,7 @@ main.add_command(clear_all_presets)
 main.add_command(ping)
 main.add_command(dump_preset)
 main.add_command(dump_channel)
+main.add_command(perf_test)
 
 
 if __name__ == "__main__":

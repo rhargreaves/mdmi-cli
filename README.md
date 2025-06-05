@@ -18,6 +18,7 @@ CLI for controlling the [Mega Drive MIDI Interface (MDMI)](https://github.com/rh
 * Clear presets. Individual user presets or all presets at once
 * List WOPN instruments
 * Connectivity testing: Ping/pong functionality to test MDMI connectivity
+* Performance testing: Continuous latency measurement with statistics and histogram generation
 
 ## Installation
 
@@ -125,6 +126,28 @@ mdmi ping --timeout 10.0
 mdmi ping --midi-out "IAC Driver Bus 1" --midi-in "IAC Driver Bus 2"
 ```
 
+### Performance testing
+
+```bash
+# Run continuous ping/pong latency test (stop with Ctrl+C)
+mdmi perf-test
+
+# Run test for specific duration
+mdmi perf-test --duration 30
+
+# Customize ping interval and output file
+mdmi perf-test --interval 0.05 --output my_latency_test.png
+
+# Test with custom timeout for individual pings
+mdmi perf-test --timeout 1.0 --duration 60
+
+# Test with specific MIDI ports
+mdmi perf-test --midi-out "IAC Driver Bus 1" --midi-in "IAC Driver Bus 2"
+
+# Test with fake interface (for development)
+mdmi perf-test --dry-run --duration 5
+```
+
 ### List available MIDI ports
 
 ```bash
@@ -145,7 +168,7 @@ mdmi list-ports
 Most commands support:
 - `--midi-out TEXT`: MIDI output port name (overrides environment variables)
 
-Commands with bidirectional communication (`ping`, `dump-preset`, `dump-channel`) also support:
+Commands with bidirectional communication (`ping`, `dump-preset`, `dump-channel`, `perf-test`) also support:
 - `--midi-in TEXT`: MIDI input port name (overrides `MDMI_MIDI_IN`)
 
 ## Development
