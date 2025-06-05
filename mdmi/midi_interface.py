@@ -193,6 +193,52 @@ class FakeMIDIInterface:
                 )
                 return dump_response
 
+        elif cmd == 0x0F:  # Channel dump request (00 22 77 0F <type> <midi_channel>)
+            if len(last_msg) >= 8:
+                preset_type = last_msg[5]  # Should be 0 for FM
+                midi_channel = last_msg[6]
+
+                # Generate a fake channel dump response (00 22 77 10 <type> <midi_channel> <preset_data>)
+                dump_response = [0xF0, 0x00, 0x22, 0x77, 0x10, preset_type, midi_channel]
+
+                # Add realistic FM preset data based on MIDI channel number
+                # Use channel number to create variation in the preset
+                algorithm = midi_channel % 8  # Algorithm 0-7
+                feedback = (midi_channel * 3) % 8  # Feedback 0-7
+                lfo_ams = midi_channel % 4  # AMS 0-3
+                lfo_fms = (midi_channel * 5) % 8  # FMS 0-7
+
+                dump_response.extend([algorithm, feedback, lfo_ams, lfo_fms])
+
+                # Add 4 realistic operators (11 bytes each)
+                for op_num in range(4):
+                    # Create variation based on channel and operator number
+                    base = (midi_channel + op_num * 20) % 128
+
+                    # Realistic FM operator parameters
+                    mul = 1 + (base % 15)  # Multiple 1-15
+                    dt = base % 8  # Detune 0-7
+                    ar = 20 + (base % 12)  # Attack Rate 20-31 (reasonable range)
+                    rs = base % 4  # Rate Scaling 0-3
+                    dr = 8 + (base % 12)  # Decay Rate 8-19
+                    am = base % 2  # AM 0-1
+                    sl = base % 16  # Sustain Level 0-15
+                    sr = base % 16  # Sustain Rate 0-15
+                    rr = 5 + (base % 12)  # Release Rate 5-16
+                    tl = (base % 48) + (op_num * 12)  # Total Level 0-99, higher for higher operators
+                    ssg = 0 if base % 4 == 0 else (8 + (base % 8))  # SSG-EG: 0 or 8-15
+
+                    dump_response.extend([mul, dt, ar, rs, dr, am, sl, sr, rr, tl, ssg])
+
+                dump_response.append(0xF7)
+                dump_response = bytes(dump_response)
+
+                print(
+                    f"FakeMIDIInterface: Simulating channel dump response for MIDI channel {midi_channel} "
+                    + f"(ALG:{algorithm}, FB:{feedback}): {' '.join(f'{b:02X}' for b in dump_response)}"
+                )
+                return dump_response
+
         return None
 
     def get_last_sysex(self) -> Optional[bytes]:

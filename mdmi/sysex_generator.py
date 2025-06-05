@@ -11,6 +11,7 @@ class SysExGenerator:
     CLEAR_PRESET_CMD = 0x0B
     CLEAR_ALL_CMD = 0x0C
     DUMP_PRESET_CMD = 0x0D
+    DUMP_CHANNEL_CMD = 0x0F
     FM_TYPE = 0x00
 
     def generate_preset_load(self, preset: Preset, program: int) -> bytes:
@@ -28,10 +29,6 @@ class SysExGenerator:
         """
         if not (0 <= program <= 127):
             raise ValueError("Program must be between 0 and 127")
-
-        if preset.format_type not in ["TFI", "DMP", "WOPN"]:
-            msg = f"Unsupported preset format: {preset.format_type}"
-            raise ValueError(msg)
 
         # Start with MDMI SysEx header
         message = [0xF0] + self.MDMI_MANUFACTURER_ID
@@ -120,5 +117,25 @@ class SysExGenerator:
 
         message = [0xF0] + self.MDMI_MANUFACTURER_ID
         message.extend([self.DUMP_PRESET_CMD, self.FM_TYPE, program, 0xF7])
+
+        return bytes(message)
+
+    def generate_dump_channel_request(self, midi_channel: int) -> bytes:
+        """Generate SysEx message to request FM channel parameter dump.
+
+        Args:
+            midi_channel: MIDI channel (0-15) assigned to the FM channel
+
+        Returns:
+            SysEx message as bytes
+
+        Raises:
+            ValueError: If midi_channel is invalid
+        """
+        if not (0 <= midi_channel <= 15):
+            raise ValueError("MIDI channel must be between 0 and 15")
+
+        message = [0xF0] + self.MDMI_MANUFACTURER_ID
+        message.extend([self.DUMP_CHANNEL_CMD, self.FM_TYPE, midi_channel, 0xF7])
 
         return bytes(message)

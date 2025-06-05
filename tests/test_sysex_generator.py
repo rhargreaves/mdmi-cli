@@ -379,16 +379,6 @@ class TestSysExGenerator:
         with pytest.raises(ValueError, match="Program must be between 0 and 127"):
             generator.generate_preset_load(preset, program=-1)
 
-    def test_generate_preset_load_unsupported_format(self):
-        """Test generating SysEx for unsupported format."""
-        generator = SysExGenerator()
-
-        preset = Preset(format_type="UNKNOWN")
-
-        error_msg = "Unsupported preset format"
-        with pytest.raises(ValueError, match=error_msg):
-            generator.generate_preset_load(preset, program=0)
-
     def test_generate_clear_preset_sysex(self):
         """Test generating complete SysEx to clear a specific preset."""
         generator = SysExGenerator()
@@ -420,3 +410,27 @@ class TestSysExGenerator:
         expected = [0xF0, 0x00, 0x22, 0x77, 0x0C, 0x00, 0xF7]
         assert list(sysex_data) == expected
         assert len(sysex_data) == 7
+
+    def test_generate_dump_channel_request(self):
+        """Test generating SysEx for channel dump request."""
+        generator = SysExGenerator()
+
+        # Test with various MIDI channels
+        for channel in [0, 5, 15]:
+            sysex_data = generator.generate_dump_channel_request(channel)
+
+            # Expected format: F0 00 22 77 0F 00 <channel> F7
+            expected = [0xF0, 0x00, 0x22, 0x77, 0x0F, 0x00, channel, 0xF7]
+            assert list(sysex_data) == expected
+            assert len(sysex_data) == 8
+
+    def test_generate_dump_channel_request_invalid_channel(self):
+        """Test generating channel dump request with invalid MIDI channel."""
+        generator = SysExGenerator()
+
+        # Test invalid channels
+        with pytest.raises(ValueError, match="MIDI channel must be between 0 and 15"):
+            generator.generate_dump_channel_request(16)
+
+        with pytest.raises(ValueError, match="MIDI channel must be between 0 and 15"):
+            generator.generate_dump_channel_request(-1)

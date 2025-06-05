@@ -267,8 +267,83 @@ def parse_dump_response(sysex_data: bytes) -> Preset:
         operators.append(operator)
 
     return Preset(
-        format_type="DUMP",
+        format_type=None,
         name=f"Preset_{program:03d}",
+        algorithm=algorithm,
+        feedback=feedback,
+        lfo_ams=lfo_ams,
+        lfo_fms=lfo_fms,
+        operators=operators,
+    )
+
+
+def parse_channel_dump_response(sysex_data: bytes) -> Preset:
+    """Parse MDMI channel dump response SysEx into a Preset object.
+
+    Args:
+        sysex_data: Complete SysEx response from MDMI (F0 00 22 77 10 ...)
+
+    Returns:
+        Preset object containing the dumped channel data
+
+    Raises:
+        PresetParseError: If the SysEx data is invalid
+    """
+    if len(sysex_data) < 8:
+        raise PresetParseError("SysEx too short for channel dump response")
+
+    # Verify it's a valid MDMI channel dump response (command 0x10)
+    if sysex_data[0] != 0xF0 or sysex_data[1:4] != bytes([0x00, 0x22, 0x77]) or sysex_data[4] != 0x10:
+        raise PresetParseError("Invalid MDMI channel dump response SysEx")
+
+    if sysex_data[-1] != 0xF7:
+        raise PresetParseError("SysEx not properly terminated")
+
+    # Extract channel data
+    preset_type = sysex_data[5]  # Should be 0 for FM
+    midi_channel = sysex_data[6]
+
+    if preset_type != 0:
+        raise PresetParseError(f"Unsupported channel type: {preset_type}")
+
+    # Parse FM parameters - expect at least 4 global + 44 operator bytes
+    if len(sysex_data) < 8 + 4 + 44:
+        raise PresetParseError("Insufficient data for FM channel")
+
+    data_start = 7
+    algorithm = sysex_data[data_start]
+    feedback = sysex_data[data_start + 1]
+    lfo_ams = sysex_data[data_start + 2]
+    lfo_fms = sysex_data[data_start + 3]
+
+    # Parse 4 operators (11 bytes each)
+    operators = []
+    op_start = data_start + 4
+
+    for i in range(4):
+        op_offset = op_start + (i * 11)
+        if op_offset + 11 > len(sysex_data) - 1:  # -1 for F7
+            raise PresetParseError(f"Insufficient data for operator {i}")
+
+        op_data = sysex_data[op_offset : op_offset + 11]
+        operator = FMOperator(
+            mul=op_data[0],
+            dt=op_data[1],
+            ar=op_data[2],
+            rs=op_data[3],
+            dr=op_data[4],
+            am=op_data[5],
+            sl=op_data[6],
+            sr=op_data[7],
+            rr=op_data[8],
+            tl=op_data[9],
+            ssg=op_data[10],
+        )
+        operators.append(operator)
+
+    return Preset(
+        format_type=None,
+        name=f"Channel_{midi_channel:02d}",
         algorithm=algorithm,
         feedback=feedback,
         lfo_ams=lfo_ams,

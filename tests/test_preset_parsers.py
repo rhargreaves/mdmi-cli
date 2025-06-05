@@ -7,6 +7,8 @@ from mdmi.preset_parsers import (
     parse_preset,
     list_wopn_contents,
     FMOperator,
+    parse_channel_dump_response,
+    PresetParseError,
 )
 
 
@@ -121,33 +123,115 @@ class TestFMOperator:
     """Tests for FMOperator."""
 
     def test_create_fm_operator(self):
-        """Test creating FMOperator with all fields."""
-        op = FMOperator(mul=1, dt=2, ar=3, rs=4, dr=5, am=6, sl=7, sr=8, rr=9, tl=10, ssg=11)
+        """Test creating FMOperator with all parameters."""
+        op = FMOperator(
+            mul=5,
+            dt=3,
+            ar=31,
+            rs=1,
+            dr=15,
+            am=0,
+            sl=8,
+            sr=4,
+            rr=12,
+            tl=40,
+            ssg=2,
+        )
 
-        assert op.mul == 1
-        assert op.dt == 2
-        assert op.ar == 3
-        assert op.rs == 4
-        assert op.dr == 5
-        assert op.am == 6
-        assert op.sl == 7
-        assert op.sr == 8
-        assert op.rr == 9
-        assert op.tl == 10
-        assert op.ssg == 11
+        assert op.mul == 5
+        assert op.dt == 3
+        assert op.ar == 31
+        assert op.rs == 1
+        assert op.dr == 15
+        assert op.am == 0
+        assert op.sl == 8
+        assert op.sr == 4
+        assert op.rr == 12
+        assert op.tl == 40
+        assert op.ssg == 2
 
     def test_fm_operator_creation(self):
-        """Test creating an FMOperator with all parameters."""
-        op = FMOperator(mul=1, dt=2, ar=3, rs=4, dr=5, am=6, sl=7, sr=8, rr=9, tl=10, ssg=11)
-
+        """Test FMOperator with minimal parameters."""
+        op = FMOperator(mul=1, dt=0, ar=15, rs=0, dr=8, am=0, sl=4, sr=2, rr=10, tl=20, ssg=0)
         assert op.mul == 1
+        assert op.tl == 20
+
+
+class TestChannelDumpParser:
+    """Tests for channel dump response parsing."""
+
+    def test_parse_channel_dump_response_valid(self):
+        """Test parsing valid channel dump response."""
+        # Create valid channel dump response SysEx
+        # F0 00 22 77 10 00 05 <algorithm> <feedback> <ams> <fms> <44 operator bytes> F7
+        sysex_data = bytearray([0xF0, 0x00, 0x22, 0x77, 0x10, 0x00, 0x05])  # Header with channel 5
+
+        # Add FM parameters
+        sysex_data.extend([0x03, 0x04, 0x01, 0x02])  # algorithm=3, feedback=4, ams=1, fms=2
+
+        # Add 4 operators (11 bytes each)
+        for i in range(4):
+            # mul, dt, ar, rs, dr, am, sl, sr, rr, tl, ssg
+            sysex_data.extend([0x05, 0x02, 0x1F, 0x01, 0x0F, 0x00, 0x08, 0x04, 0x0C, 0x28, 0x00])
+
+        sysex_data.append(0xF7)  # End SysEx
+
+        preset = parse_channel_dump_response(bytes(sysex_data))
+
+        assert preset.format_type is None
+        assert preset.name == "Channel_05"
+        assert preset.algorithm == 3
+        assert preset.feedback == 4
+        assert preset.lfo_ams == 1
+        assert preset.lfo_fms == 2
+        assert len(preset.operators) == 4
+
+        # Check first operator
+        op = preset.operators[0]
+        assert op.mul == 5
         assert op.dt == 2
-        assert op.ar == 3
-        assert op.rs == 4
-        assert op.dr == 5
-        assert op.am == 6
-        assert op.sl == 7
-        assert op.sr == 8
-        assert op.rr == 9
-        assert op.tl == 10
-        assert op.ssg == 11
+        assert op.ar == 31
+        assert op.rs == 1
+        assert op.dr == 15
+        assert op.am == 0
+        assert op.sl == 8
+        assert op.sr == 4
+        assert op.rr == 12
+        assert op.tl == 40
+        assert op.ssg == 0
+
+    def test_parse_channel_dump_response_invalid_header(self):
+        """Test parsing with invalid header."""
+        # Wrong command ID (0x0E instead of 0x10) - make sure it's long enough
+        sysex_data = bytearray([0xF0, 0x00, 0x22, 0x77, 0x0E, 0x00, 0x05])
+        sysex_data.extend([0x00] * 48)  # Pad to avoid length error
+        sysex_data.append(0xF7)
+
+        with pytest.raises(PresetParseError, match="Invalid MDMI channel dump response SysEx"):
+            parse_channel_dump_response(bytes(sysex_data))
+
+    def test_parse_channel_dump_response_too_short(self):
+        """Test parsing with insufficient data."""
+        sysex_data = bytes([0xF0, 0x00, 0x22, 0x77, 0x10])
+
+        with pytest.raises(PresetParseError, match="SysEx too short for channel dump response"):
+            parse_channel_dump_response(sysex_data)
+
+    def test_parse_channel_dump_response_wrong_type(self):
+        """Test parsing with wrong channel type."""
+        sysex_data = bytearray([0xF0, 0x00, 0x22, 0x77, 0x10, 0x01, 0x05])  # Type 1 instead of 0
+        sysex_data.extend([0x00] * 48)  # Pad with zeros
+        sysex_data.append(0xF7)
+
+        with pytest.raises(PresetParseError, match="Unsupported channel type: 1"):
+            parse_channel_dump_response(bytes(sysex_data))
+
+    def test_parse_channel_dump_response_insufficient_operator_data(self):
+        """Test parsing with insufficient operator data."""
+        sysex_data = bytearray([0xF0, 0x00, 0x22, 0x77, 0x10, 0x00, 0x05])
+        sysex_data.extend([0x03, 0x04, 0x01, 0x02])  # FM parameters
+        sysex_data.extend([0x00] * 20)  # Only 20 bytes instead of 44 for operators
+        sysex_data.append(0xF7)
+
+        with pytest.raises(PresetParseError, match="Insufficient data for FM channel"):
+            parse_channel_dump_response(bytes(sysex_data))
