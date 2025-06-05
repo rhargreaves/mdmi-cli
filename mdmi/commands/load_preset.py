@@ -14,7 +14,7 @@ from .common import midi_options, get_midi_interface
     "--program",
     type=click.IntRange(0, 127),
     required=True,
-    help="MIDI program number to store preset under (0-127)",
+    help="MIDI program number to store preset under",
 )
 @midi_options
 @click.option("--bank", type=int, default=0, help="WOPN bank index (default: 0)")

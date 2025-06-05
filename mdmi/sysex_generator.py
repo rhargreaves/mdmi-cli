@@ -18,7 +18,7 @@ class SysExGenerator:
 
         Args:
             preset: The preset to convert to SysEx
-            program: MIDI program number (0-127)
+            program: MIDI program number
 
         Returns:
             SysEx message as bytes
@@ -76,7 +76,7 @@ class SysExGenerator:
         """Generate SysEx message to clear a specific preset.
 
         Args:
-            program: MIDI program number (0-127) to clear
+            program: MIDI program number to clear
 
         Returns:
             SysEx message as bytes
@@ -107,7 +107,7 @@ class SysExGenerator:
         """Generate SysEx message to request preset dump.
 
         Args:
-            program: MIDI program number (0-127) to dump
+            program: MIDI program number to dump
 
         Returns:
             SysEx message as bytes

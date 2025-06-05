@@ -11,7 +11,7 @@ from .common import midi_options, get_midi_interface
     "--program",
     type=click.IntRange(0, 127),
     required=True,
-    help="MIDI program number to clear (0-127)",
+    help="MIDI program number to clear",
 )
 @midi_options
 def clear_preset(program, midi_out, dry_run):

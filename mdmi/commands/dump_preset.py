@@ -13,7 +13,7 @@ from .common import ping_options, get_ping_interface
     "--program",
     type=click.IntRange(0, 127),
     required=True,
-    help="MIDI program number to dump (0-127)",
+    help="MIDI program number to dump",
 )
 @click.option(
     "--format",
