@@ -3,7 +3,8 @@
 import pytest
 from unittest.mock import Mock, patch
 
-from mdmi.midi_interface import MIDIInterface, FakeMIDIInterface
+from mdmi.midi_interface import MIDIInterface
+from mdmi.fake_midi_interface import FakeMIDIInterface
 
 
 class TestMIDIInterface:

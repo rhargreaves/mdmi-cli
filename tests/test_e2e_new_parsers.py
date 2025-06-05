@@ -4,7 +4,7 @@ import pytest
 
 from mdmi.preset_parsers import detect_preset_format, parse_preset
 from mdmi.sysex_generator import SysExGenerator
-from mdmi.midi_interface import FakeMIDIInterface
+from mdmi.fake_midi_interface import FakeMIDIInterface
 
 
 class TestE2ENewParsers:

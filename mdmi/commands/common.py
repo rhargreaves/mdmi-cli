@@ -2,7 +2,8 @@
 
 import click
 import os
-from mdmi.midi_interface import MIDIInterface, FakeMIDIInterface
+from mdmi.midi_interface import MIDIInterface
+from mdmi.fake_midi_interface import FakeMIDIInterface
 
 
 def get_default_output_port():

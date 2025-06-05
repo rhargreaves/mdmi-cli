@@ -323,7 +323,7 @@ class TestCLI:
 
     def test_fake_interface_debug_output(self):
         """Test that FakeMIDIInterface prints SysEx debug information."""
-        from mdmi.midi_interface import FakeMIDIInterface
+        from mdmi.fake_midi_interface import FakeMIDIInterface
 
         # Create a fake interface
         fake_interface = FakeMIDIInterface()
