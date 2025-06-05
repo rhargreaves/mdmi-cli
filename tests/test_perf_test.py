@@ -107,7 +107,7 @@ class TestGenerateHistogram:
         stats = {"count": 6, "min": 10.0, "max": 13.0, "avg": 11.5, "median": 11.75}
 
         with tempfile.NamedTemporaryFile(suffix=".png") as tmp:
-            generate_histogram(latencies, tmp.name, stats)
+            generate_histogram(latencies, tmp.name, stats, 0.05)
 
         # Verify matplotlib functions were called
         mock_savefig.assert_called_once()
@@ -127,7 +127,7 @@ class TestGenerateHistogram:
         }
 
         with tempfile.NamedTemporaryFile(suffix=".png") as tmp:
-            generate_histogram(latencies, tmp.name, stats)
+            generate_histogram(latencies, tmp.name, stats, 0.05)
 
         mock_savefig.assert_called_once()
         mock_close.assert_called_once()
@@ -140,7 +140,7 @@ class TestGenerateHistogram:
         stats = {"count": 3, "min": 10.0, "max": 12.0, "avg": 11.0, "median": 11.0}
 
         with tempfile.NamedTemporaryFile(suffix=".png") as tmp:
-            generate_histogram(latencies, tmp.name, stats)
+            generate_histogram(latencies, tmp.name, stats, 0.05)
 
         mock_savefig.assert_called_once()
         mock_close.assert_called_once()
@@ -162,7 +162,7 @@ class TestGenerateHistogram:
         }
 
         with tempfile.NamedTemporaryFile(suffix=".png") as tmp:
-            generate_histogram(latencies, tmp.name, stats)
+            generate_histogram(latencies, tmp.name, stats, 0.05)
 
         mock_savefig.assert_called_once()
         mock_close.assert_called_once()
@@ -181,7 +181,7 @@ class TestGenerateHistogram:
         mock_hist.return_value = ([1, 2, 3], [0, 1, 2, 3], [])  # counts, bins, patches
 
         with tempfile.NamedTemporaryFile(suffix=".png") as tmp:
-            generate_histogram(latencies, tmp.name, stats)
+            generate_histogram(latencies, tmp.name, stats, 0.05)
 
         # Verify histogram was created
         mock_hist.assert_called_once()
@@ -195,6 +195,7 @@ class TestGenerateHistogram:
         # Verify the text contains statistics
         stats_text = mock_text.call_args[0][2]  # Third positional argument
         assert "Count: 8" in stats_text
+        assert "Interval: 50.0 ms" in stats_text  # 0.05 * 1000 = 50.0 ms
         assert "Min: 9.50" in stats_text
         assert "Max: 14.00" in stats_text
         assert "Avg: 11.56" in stats_text
@@ -215,7 +216,7 @@ class TestGenerateHistogram:
         }
 
         with tempfile.NamedTemporaryFile(suffix=".png") as tmp:
-            generate_histogram(latencies, tmp.name, stats)
+            generate_histogram(latencies, tmp.name, stats, 0.05)
 
         mock_savefig.assert_called_once()
         mock_close.assert_called_once()
@@ -230,7 +231,7 @@ class TestGenerateHistogram:
         # Should raise the IOError from savefig
         with tempfile.NamedTemporaryFile(suffix=".png") as tmp:
             try:
-                generate_histogram(latencies, tmp.name, stats)
+                generate_histogram(latencies, tmp.name, stats, 0.05)
                 assert False, "Expected IOError to be raised"
             except IOError as e:
                 assert "Cannot save file" in str(e)
@@ -247,7 +248,7 @@ class TestGenerateHistogram:
             temp_path = tmp.name
 
         try:
-            generate_histogram(latencies, temp_path, stats)
+            generate_histogram(latencies, temp_path, stats, 0.05)
 
             # Verify file was created and has content
             assert os.path.exists(temp_path)
@@ -280,7 +281,7 @@ class TestGenerateHistogram:
             }
 
             with tempfile.NamedTemporaryFile(suffix=".png") as tmp:
-                generate_histogram(latencies, tmp.name, stats)
+                generate_histogram(latencies, tmp.name, stats, 0.05)
 
         # Should have called savefig and close for each test case
         assert mock_savefig.call_count == len(test_cases)

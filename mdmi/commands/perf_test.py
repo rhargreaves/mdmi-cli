@@ -199,7 +199,7 @@ def perf_test(midi_out, midi_in, dry_run, duration, interval, hist_filename, tim
                 click.echo(f"  99th %ile: {p99:.2f} ms")
 
             # Generate histogram
-            generate_histogram(perf.latencies, hist_filename, stats)
+            generate_histogram(perf.latencies, hist_filename, stats, interval)
             click.echo(f"\n📊 Histogram saved to: {hist_filename}")
         else:
             click.echo("❌ No successful pings recorded - cannot generate histogram")
@@ -212,7 +212,7 @@ def perf_test(midi_out, midi_in, dry_run, duration, interval, hist_filename, tim
             interface.close()
 
 
-def generate_histogram(latencies, output_path, stats):
+def generate_histogram(latencies, output_path, stats, interval):
     """Generate and save a latency histogram."""
     plt.figure(figsize=(12, 8))
 
@@ -223,6 +223,7 @@ def generate_histogram(latencies, output_path, stats):
     # Add statistics text box
     stats_text = (
         f"Count: {stats['count']}\n"
+        f"Interval: {interval * 1000:.1f} ms\n"
         f"Min: {stats['min']:.2f} ms\n"
         f"Max: {stats['max']:.2f} ms\n"
         f"Avg: {stats['avg']:.2f} ms\n"
