@@ -217,7 +217,7 @@ def generate_histogram(latencies, output_path, stats, interval):
     plt.figure(figsize=(12, 8))
 
     # Create histogram
-    n_bins = min(50, max(10, len(latencies) // 10))  # Adaptive bin count
+    n_bins = min(100, max(10, len(latencies) // 10))  # Adaptive bin count
     counts, bins, patches = plt.hist(latencies, bins=n_bins, alpha=0.7, color="skyblue", edgecolor="black")
 
     # Add statistics text box
