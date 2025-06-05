@@ -33,36 +33,27 @@ pip install mdmi-cli
 ### Load a preset
 
 ```bash
-# Load TFI preset to program 0 (uses MDMI_MIDI_OUT if set)
+# Load TFI preset to program 0
 mdmi load-preset example.tfi --program 0
 
-# Load DMP preset to program 5 via specific MIDI port
-mdmi load-preset example.dmp --program 5 --midi-out "IAC Driver Bus 1"
+# Load DMP preset to program 5
+mdmi load-preset example.dmp --program 5
 
 # Load specific WOPN instrument to program 10
 mdmi load-preset soundbank.wopn --program 10 --bank 0 --instrument 5 --bank-type melody
-
-# Test with fake interface (for development)
-mdmi load-preset example.tfi --program 0 --dry-run
 ```
 
 ### Dump presets
 
 ```bash
-# Dump preset from program 5 to DMP file (uses MDMI_MIDI_OUT/IN if set)
+# Dump preset from program 5 to DMP file
 mdmi dump-preset --program 5 --format dmp --filename my_preset.dmp
 
-# Dump preset from program 10 to TFI file
-mdmi dump-preset --program 10 --format tfi --filename my_preset.tfi
-
-# Dump with auto-generated filename (preset_5.dmp)
+# Dump preset with auto-generated filename (preset_5.dmp)
 mdmi dump-preset --program 5
 
-# Test dump with fake interface
-mdmi dump-preset --program 0 --dry-run
-
-# Dump with custom timeout and specific ports
-mdmi dump-preset --program 3 --timeout 10.0 --midi-out "IAC Driver Bus 1" --midi-in "IAC Driver Bus 2"
+# Dump preset to TFI file
+mdmi dump-preset --program 10 --format tfi --filename my_preset.tfi
 ```
 
 ### Dump FM channel parameters
@@ -71,17 +62,11 @@ mdmi dump-preset --program 3 --timeout 10.0 --midi-out "IAC Driver Bus 1" --midi
 # Dump FM channel parameters from MIDI channel 5 to DMP file
 mdmi dump-channel --channel 5 --format dmp --filename channel_5.dmp
 
-# Dump FM channel parameters from MIDI channel 3 to TFI file
-mdmi dump-channel --channel 3 --format tfi --filename channel_3.tfi
-
 # Dump with auto-generated filename (channel_05.dmp)
 mdmi dump-channel --channel 5
 
-# Test channel dump with fake interface
-mdmi dump-channel --channel 0 --dry-run
-
-# Dump with custom timeout and specific ports
-mdmi dump-channel --channel 7 --timeout 10.0 --midi-out "IAC Driver Bus 1" --midi-in "IAC Driver Bus 2"
+# Dump to TFI file
+mdmi dump-channel --channel 3 --format tfi --filename channel_3.tfi
 ```
 
 ### WOPN file management
@@ -95,22 +80,19 @@ mdmi list-wopn soundbank.wopn --full
 
 # Load percussion instrument from WOPN
 mdmi load-preset soundbank.wopn --program 20 --bank 0 --instrument 3 --bank-type percussion
-
-# Load from different melody bank
-mdmi load-preset soundbank.wopn --program 15 --bank 1 --instrument 65 --bank-type melody
 ```
 
 ### Clear presets
 
 ```bash
-# Clear preset at program 5 (uses MDMI_MIDI_OUT if set)
+# Clear preset at program 5
 mdmi clear-preset --program 5
 
 # Clear all presets (with confirmation)
 mdmi clear-all-presets
 
-# Clear all presets (skip confirmation) with specific port
-mdmi clear-all-presets --confirm --midi-out "IAC Driver Bus 1"
+# Clear all presets (skip confirmation)
+mdmi clear-all-presets --confirm
 ```
 
 ### Test connectivity
@@ -121,9 +103,6 @@ mdmi ping
 
 # Test with custom timeout
 mdmi ping --timeout 10.0
-
-# Test with specific ports
-mdmi ping --midi-out "IAC Driver Bus 1" --midi-in "IAC Driver Bus 2"
 ```
 
 ### Performance testing
@@ -132,20 +111,14 @@ mdmi ping --midi-out "IAC Driver Bus 1" --midi-in "IAC Driver Bus 2"
 # Run continuous ping/pong latency test (stop with Ctrl+C)
 mdmi perf-test
 
-# Run test for specific duration
-mdmi perf-test --duration 30
+# Run test for specific duration with custom interval
+mdmi perf-test --duration 30 --interval 0.05
 
-# Customize ping interval and output file
-mdmi perf-test --interval 0.05 --output my_latency_test.png
+# Customize histogram filename
+mdmi perf-test --hist-filename my_latency_test.png
 
 # Test with custom timeout for individual pings
 mdmi perf-test --timeout 1.0 --duration 60
-
-# Test with specific MIDI ports
-mdmi perf-test --midi-out "IAC Driver Bus 1" --midi-in "IAC Driver Bus 2"
-
-# Test with fake interface (for development)
-mdmi perf-test --dry-run --duration 5
 ```
 
 ### List available MIDI ports
@@ -153,6 +126,38 @@ mdmi perf-test --dry-run --duration 5
 ```bash
 # List all available MIDI input and output ports
 mdmi list-ports
+```
+
+## Common Options
+
+All commands support these common options:
+
+### MIDI Port Selection
+
+```bash
+# Use specific MIDI ports instead of environment variables
+mdmi load-preset example.tfi --program 0 --midi-out "IAC Driver Bus 1"
+
+# Commands with bidirectional communication support input ports
+mdmi ping --midi-out "IAC Driver Bus 1" --midi-in "IAC Driver Bus 2"
+mdmi dump-preset --program 5 --midi-out "Port 1" --midi-in "Port 2"
+```
+
+### Dry Run
+
+```bash
+# Test with fake interface (no real MIDI hardware required)
+mdmi load-preset example.tfi --program 0 --dry-run
+mdmi perf-test --dry-run --duration 5
+mdmi ping --dry-run
+```
+
+### Timeout
+
+```bash
+# Custom timeouts for bidirectional commands
+mdmi ping --timeout 10.0
+mdmi dump-preset --program 3 --timeout 5.0
 ```
 
 ## Configuration
@@ -165,11 +170,10 @@ mdmi list-ports
 
 ### Command-line Options
 
-Most commands support:
 - `--midi-out TEXT`: MIDI output port name (overrides environment variables)
-
-Commands with bidirectional communication (`ping`, `dump-preset`, `dump-channel`, `perf-test`) also support:
-- `--midi-in TEXT`: MIDI input port name (overrides `MDMI_MIDI_IN`)
+- `--midi-in TEXT`: MIDI input port name for bidirectional commands (overrides `MDMI_MIDI_IN`)
+- `--dry-run`: Use fake MIDI interface for testing
+- `--timeout FLOAT`: Timeout for bidirectional commands (default varies by command)
 
 ## Development
 
