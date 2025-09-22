@@ -186,3 +186,9 @@ make install
 # Run tests
 make test
 ```
+
+### Release
+
+1. Bump the version in `mdmi/__init__.py`
+2. Add a version tag: `git tag v...`
+3. Push the tags: `git push --tags`
