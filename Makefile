@@ -1,8 +1,6 @@
-.PHONY: help install install-dev test test-verbose lint clean run-example
-
 help:
 	@echo "MDMI CLI Development Commands"
-	@echo "============================"
+	@echo "============================="
 	@echo "install      Install package in development mode"
 	@echo "install-dev  Install with development dependencies"
 	@echo "test         Run all tests"
@@ -10,6 +8,7 @@ help:
 	@echo "lint         Run linting checks"
 	@echo "clean        Clean build artifacts"
 	@echo "run-example  Run example with fake interface"
+.PHONY: help
 
 install:
 	pip3 install -e .
