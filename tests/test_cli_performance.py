@@ -272,7 +272,7 @@ class TestCLIPerfTest:
 
         # Create alternating success/failure responses (6 pings total)
         responses = [True, False, True, False, True, False]
-        
+
         def response(_timeout):
             outcome = responses.pop(0)
             if not outcome:
