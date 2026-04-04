@@ -55,7 +55,7 @@ class FakeMidiInterface:
         cmd = last_msg[4]
 
         if cmd == 0x01:  # Ping (00 22 77 01)
-            return self._generate_ping_response()
+            return self._generate_ping_response(last_msg)
         elif cmd == 0x0D:  # Dump request (00 22 77 0D <type> <program>)
             return self._generate_preset_dump_response(last_msg)
         elif cmd == 0x0F:  # Channel dump request (00 22 77 0F <type> <midi_channel>)
@@ -63,9 +63,12 @@ class FakeMidiInterface:
 
         return None
 
-    def _generate_ping_response(self) -> bytes:
+    def _generate_ping_response(self, request_msg: bytes) -> bytes:
         """Generate a ping response."""
-        pong_response = bytes([0xF0, 0x00, 0x22, 0x77, 0x02, 0xF7])
+        ping_id = 0x00
+        if len(request_msg) >= 7:
+            ping_id = request_msg[5]
+        pong_response = bytes([0xF0, 0x00, 0x22, 0x77, 0x02, ping_id, 0xF7])
         print(f"FakeMIDIInterface: Simulating pong response: {' '.join(f'{b:02X}' for b in pong_response)}")
         return pong_response
 

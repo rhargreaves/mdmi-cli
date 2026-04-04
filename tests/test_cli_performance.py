@@ -19,6 +19,14 @@ def setup_virtual_clock():
     return time_side_effect, sleep_side_effect
 
 
+def create_pong_with_matching_id(mock_interface):
+    def response(_timeout):
+        sent_ping = mock_interface.send_sysex.call_args[0][0]
+        return bytes([0xF0, 0x00, 0x22, 0x77, 0x02, sent_ping[5], 0xF7])
+
+    return response
+
+
 class TestCLIPing:
     """Tests for ping command."""
 
@@ -39,7 +47,7 @@ class TestCLIPing:
         """Test ping command with successful fake interface response."""
         mock_interface = Mock()
         mock_interface.port_name = "Fake MIDI Interface"
-        mock_interface.wait_for_sysex.return_value = bytes([0xF0, 0x00, 0x22, 0x77, 0x02, 0xF7])
+        mock_interface.wait_for_sysex.side_effect = create_pong_with_matching_id(mock_interface)
         mock_fake_midi.return_value = mock_interface
 
         runner = CliRunner()
@@ -54,8 +62,9 @@ class TestCLIPing:
         # Verify ping SysEx was sent
         mock_interface.send_sysex.assert_called_once()
         sent_ping = mock_interface.send_sysex.call_args[0][0]
-        expected_ping = bytes([0xF0, 0x00, 0x22, 0x77, 0x01, 0xF7])
-        assert sent_ping == expected_ping
+        assert sent_ping[0:5] == bytes([0xF0, 0x00, 0x22, 0x77, 0x01])
+        assert 0 <= sent_ping[5] <= 0x7F
+        assert sent_ping[6] == 0xF7
 
     @patch("mdmi.commands.common.FakeMidiInterface")
     def test_ping_fake_interface_timeout(self, mock_fake_midi):
@@ -77,8 +86,7 @@ class TestCLIPing:
         """Test ping command with unexpected response."""
         mock_interface = Mock()
         mock_interface.port_name = "Fake MIDI Interface"
-        # Return unexpected response
-        mock_interface.wait_for_sysex.return_value = bytes([0xF0, 0x00, 0x22, 0x77, 0x99, 0xF7])
+        mock_interface.wait_for_sysex.return_value = bytes([0xF0, 0x00, 0x22, 0x77, 0x99, 0x00, 0xF7])
         mock_fake_midi.return_value = mock_interface
 
         runner = CliRunner()
@@ -86,15 +94,15 @@ class TestCLIPing:
 
         assert result.exit_code != 0
         assert "❌ Unexpected response:" in result.output
-        assert "F0 00 22 77 99 F7" in result.output
-        assert "Expected pong: F0 00 22 77 02 F7" in result.output
+        assert "F0 00 22 77 99 00 F7" in result.output
+        assert "Expected pong: F0 00 22 77 02" in result.output
 
     @patch("mdmi.commands.common.FakeMidiInterface")
     def test_ping_with_custom_timeout(self, mock_fake_midi):
         """Test ping command with custom timeout value."""
         mock_interface = Mock()
         mock_interface.port_name = "Fake MIDI Interface"
-        mock_interface.wait_for_sysex.return_value = bytes([0xF0, 0x00, 0x22, 0x77, 0x02, 0xF7])
+        mock_interface.wait_for_sysex.side_effect = create_pong_with_matching_id(mock_interface)
         mock_fake_midi.return_value = mock_interface
 
         runner = CliRunner()
@@ -140,7 +148,7 @@ class TestCLIPerfTest:
         """Test perf-test command with duration limit."""
         mock_interface = Mock()
         mock_interface.port_name = "Fake MIDI Interface"
-        mock_interface.wait_for_sysex.return_value = bytes([0xF0, 0x00, 0x22, 0x77, 0x02, 0xF7])
+        mock_interface.wait_for_sysex.side_effect = create_pong_with_matching_id(mock_interface)
         mock_fake_midi.return_value = mock_interface
 
         # Set up virtual clock for fast testing
@@ -178,7 +186,7 @@ class TestCLIPerfTest:
         """Test perf-test command with custom options."""
         mock_interface = Mock()
         mock_interface.port_name = "Test Port"
-        mock_interface.wait_for_sysex.return_value = bytes([0xF0, 0x00, 0x22, 0x77, 0x02, 0xF7])
+        mock_interface.wait_for_sysex.side_effect = create_pong_with_matching_id(mock_interface)
         mock_fake_midi.return_value = mock_interface
 
         # Virtual clock
@@ -230,16 +238,16 @@ class TestCLIPerfTest:
         mock_sleep.side_effect = lambda duration: virtual_time.__setitem__(0, virtual_time[0] + duration)
 
         # Create alternating success/failure responses (6 pings total)
-        success_response = bytes([0xF0, 0x00, 0x22, 0x77, 0x02, 0xF7])
-        responses = [
-            success_response,  # Success
-            None,  # Failure
-            success_response,  # Success
-            None,  # Failure
-            success_response,  # Success
-            None,  # Failure
-        ]
-        mock_interface.wait_for_sysex.side_effect = responses
+        responses = [True, False, True, False, True, False]
+        
+        def response(_timeout):
+            outcome = responses.pop(0)
+            if not outcome:
+                return None
+            sent_ping = mock_interface.send_sysex.call_args[0][0]
+            return bytes([0xF0, 0x00, 0x22, 0x77, 0x02, sent_ping[5], 0xF7])
+
+        mock_interface.wait_for_sysex.side_effect = response
         mock_fake_midi.return_value = mock_interface
 
         runner = CliRunner()
@@ -283,7 +291,7 @@ class TestCLIPerfTest:
         mock_interface = Mock()
         mock_interface.port_name = "Test Output Port"
         mock_interface.input_port_name = "Test Input Port"
-        mock_interface.wait_for_sysex.return_value = bytes([0xF0, 0x00, 0x22, 0x77, 0x02, 0xF7])
+        mock_interface.wait_for_sysex.side_effect = create_pong_with_matching_id(mock_interface)
         mock_fake_midi.return_value = mock_interface
 
         # Virtual clock
@@ -319,7 +327,7 @@ class TestCLIPerfTest:
         """Test that performance statistics are calculated correctly."""
         mock_interface = Mock()
         mock_interface.port_name = "Fake MIDI Interface"
-        mock_interface.wait_for_sysex.return_value = bytes([0xF0, 0x00, 0x22, 0x77, 0x02, 0xF7])
+        mock_interface.wait_for_sysex.side_effect = create_pong_with_matching_id(mock_interface)
         mock_fake_midi.return_value = mock_interface
 
         # Virtual clock
@@ -352,7 +360,7 @@ class TestCLIPerfTest:
         """Test perf-test command with environment variables."""
         mock_interface = Mock()
         mock_interface.port_name = "Env Test Port"
-        mock_interface.wait_for_sysex.return_value = bytes([0xF0, 0x00, 0x22, 0x77, 0x02, 0xF7])
+        mock_interface.wait_for_sysex.side_effect = create_pong_with_matching_id(mock_interface)
         mock_fake_midi.return_value = mock_interface
 
         # Virtual clock
@@ -376,7 +384,7 @@ class TestCLIPerfTest:
         """Test that real-time statistics updates are working."""
         mock_interface = Mock()
         mock_interface.port_name = "Fake MIDI Interface"
-        mock_interface.wait_for_sysex.return_value = bytes([0xF0, 0x00, 0x22, 0x77, 0x02, 0xF7])
+        mock_interface.wait_for_sysex.side_effect = create_pong_with_matching_id(mock_interface)
         mock_fake_midi.return_value = mock_interface
 
         # Virtual clock
@@ -394,9 +402,11 @@ class TestCLIPerfTest:
         assert ping_calls == 6
 
         # Verify all pings were correct format
-        expected_ping = bytes([0xF0, 0x00, 0x22, 0x77, 0x01, 0xF7])
         for call in mock_interface.send_sysex.call_args_list:
-            assert call[0][0] == expected_ping
+            sent_ping = call[0][0]
+            assert sent_ping[0:5] == bytes([0xF0, 0x00, 0x22, 0x77, 0x01])
+            assert 0 <= sent_ping[5] <= 0x7F
+            assert sent_ping[6] == 0xF7
 
     @patch("mdmi.commands.common.FakeMidiInterface")
     @patch("matplotlib.pyplot.savefig", side_effect=Exception("Histogram error"))
@@ -406,7 +416,7 @@ class TestCLIPerfTest:
         """Test perf-test command when histogram generation fails."""
         mock_interface = Mock()
         mock_interface.port_name = "Fake MIDI Interface"
-        mock_interface.wait_for_sysex.return_value = bytes([0xF0, 0x00, 0x22, 0x77, 0x02, 0xF7])
+        mock_interface.wait_for_sysex.side_effect = create_pong_with_matching_id(mock_interface)
         mock_fake_midi.return_value = mock_interface
 
         # Virtual clock

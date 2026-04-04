@@ -1,6 +1,7 @@
 """Ping command for MDMI CLI."""
 
 import time
+import random
 import click
 from .common import dual_midi_options, get_midi_interface
 
@@ -33,8 +34,8 @@ def ping(midi_out, midi_in, dry_run, timeout, no_response):
         if no_response and dry_run:
             interface.simulate_pong = False
 
-        # Create ping SysEx message (F0 00 22 77 01 F7)
-        ping_message = bytes([0xF0, 0x00, 0x22, 0x77, 0x01, 0xF7])
+        ping_id = random.randint(0, 0x7F)
+        ping_message = bytes([0xF0, 0x00, 0x22, 0x77, 0x01, ping_id, 0xF7])
 
         click.echo(f"Sending ping to {interface.port_name}...")
         if hasattr(interface, "input_port_name") and interface.input_port_name != interface.port_name:
@@ -58,11 +59,11 @@ def ping(midi_out, midi_in, dry_run, timeout, no_response):
             raise click.Abort()
 
         # Verify it's a valid pong response
-        expected_pong = bytes([0xF0, 0x00, 0x22, 0x77, 0x02, 0xF7])
+        expected_pong = bytes([0xF0, 0x00, 0x22, 0x77, 0x02, ping_id, 0xF7])
         if pong_response != expected_pong:
             hex_response = " ".join(f"{b:02X}" for b in pong_response)
             click.echo(f"❌ Unexpected response: {hex_response}")
-            click.echo("Expected pong: F0 00 22 77 02 F7")
+            click.echo(f"Expected pong: {' '.join(f'{b:02X}' for b in expected_pong)}")
             raise click.Abort()
 
         # Calculate round-trip time

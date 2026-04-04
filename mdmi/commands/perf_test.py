@@ -3,6 +3,7 @@
 import time
 import signal
 import statistics
+import random
 from datetime import datetime
 import click
 import matplotlib.pyplot as plt
@@ -97,10 +98,6 @@ def perf_test(midi_out, midi_in, dry_run, duration, interval, hist_filename, tim
         # Get MIDI interface
         interface = get_midi_interface(midi_out, midi_in, dry_run)
 
-        # Create ping SysEx message
-        ping_message = bytes([0xF0, 0x00, 0x22, 0x77, 0x01, 0xF7])
-        expected_pong = bytes([0xF0, 0x00, 0x22, 0x77, 0x02, 0xF7])
-
         click.echo(f"Starting performance test on {interface.port_name}...")
         if hasattr(interface, "input_port_name") and interface.input_port_name != interface.port_name:
             click.echo(f"Listening for responses on {interface.input_port_name}...")
@@ -125,6 +122,9 @@ def perf_test(midi_out, midi_in, dry_run, duration, interval, hist_filename, tim
                 break
 
             # Send ping
+            ping_id = random.randint(0, 0x7F)
+            ping_message = bytes([0xF0, 0x00, 0x22, 0x77, 0x01, ping_id, 0xF7])
+            expected_pong = bytes([0xF0, 0x00, 0x22, 0x77, 0x02, ping_id, 0xF7])
             ping_start = time.time()
             interface.send_sysex(ping_message)
 

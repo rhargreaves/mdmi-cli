@@ -105,6 +105,8 @@ mdmi ping
 mdmi ping --timeout 10.0
 ```
 
+`ping` sends a 7-bit ping ID and validates that the returned pong echoes the same ID.
+
 ### Performance testing
 
 ```bash
