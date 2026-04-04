@@ -27,7 +27,7 @@ test-verbose:
 .PHONY: test-verbose
 
 lint:
-	ruff check --fix .
+	ruff format --check .
 .PHONY: lint
 
 clean:
