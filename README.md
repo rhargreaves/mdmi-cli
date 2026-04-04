@@ -98,14 +98,20 @@ mdmi clear-all-presets --confirm
 ### Test connectivity
 
 ```bash
-# Test MDMI connectivity with ping/pong
+# Continuously ping MDMI (stop with Ctrl+C)
 mdmi ping
 
-# Test with custom timeout
+# Send exactly 5 pings
+mdmi ping -n 5
+
+# Add 16 bytes of extra packet data
+mdmi ping --size 16
+
+# Use a custom timeout
 mdmi ping --timeout 10.0
 ```
 
-`ping` sends a 7-bit ping ID and validates that the returned pong echoes the same ID.
+`ping` now behaves like a standard network ping: it runs continuously by default, supports `-n/--count` to stop after a fixed number of packets, and supports `--size` to append additional packet data after the ping ID.
 
 ### Performance testing
 

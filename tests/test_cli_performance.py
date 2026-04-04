@@ -38,6 +38,8 @@ class TestCLIPing:
         assert result.exit_code == 0
         assert "Send a ping to MDMI and measure round-trip latency" in result.output
         assert "--timeout" in result.output
+        assert "-n" in result.output
+        assert "--size" in result.output
         assert "--midi-in" in result.output
         assert "MDMI_MIDI_OUT" in result.output
         assert "MDMI_MIDI_IN" in result.output
@@ -51,12 +53,12 @@ class TestCLIPing:
         mock_fake_midi.return_value = mock_interface
 
         runner = CliRunner()
-        result = runner.invoke(main, ["ping", "--dry-run"])
+        result = runner.invoke(main, ["ping", "--dry-run", "-n", "1"])
 
         assert result.exit_code == 0
-        assert "Sending ping to Fake MIDI Interface" in result.output
-        assert "✅ Pong received!" in result.output
-        assert "Round-trip latency:" in result.output
+        assert "PING Fake MIDI Interface timeout: 5.0s" in result.output
+        assert "bytes from" in result.output
+        assert "time=" in result.output
         assert "ms" in result.output
 
         # Verify ping SysEx was sent
@@ -75,11 +77,11 @@ class TestCLIPing:
         mock_fake_midi.return_value = mock_interface
 
         runner = CliRunner()
-        result = runner.invoke(main, ["ping", "--dry-run", "--timeout", "0.1"])
+        result = runner.invoke(main, ["ping", "--dry-run", "--timeout", "0.1", "-n", "1"])
 
         assert result.exit_code != 0
-        assert "❌ No pong response received" in result.output
-        assert "MDMI is not connected" in result.output
+        assert "Request timeout for ping" in result.output
+        assert "1 packets transmitted, 0 received" in result.output
 
     @patch("mdmi.commands.common.FakeMidiInterface")
     def test_ping_fake_interface_wrong_response(self, mock_fake_midi):
@@ -90,12 +92,12 @@ class TestCLIPing:
         mock_fake_midi.return_value = mock_interface
 
         runner = CliRunner()
-        result = runner.invoke(main, ["ping", "--dry-run"])
+        result = runner.invoke(main, ["ping", "--dry-run", "-n", "1"])
 
         assert result.exit_code != 0
-        assert "❌ Unexpected response:" in result.output
+        assert "Unexpected response:" in result.output
         assert "F0 00 22 77 99 00 F7" in result.output
-        assert "Expected pong: F0 00 22 77 02" in result.output
+        assert "1 packets transmitted, 0 received" in result.output
 
     @patch("mdmi.commands.common.FakeMidiInterface")
     def test_ping_with_custom_timeout(self, mock_fake_midi):
@@ -106,7 +108,7 @@ class TestCLIPing:
         mock_fake_midi.return_value = mock_interface
 
         runner = CliRunner()
-        result = runner.invoke(main, ["ping", "--dry-run", "--timeout", "2.5"])
+        result = runner.invoke(main, ["ping", "--dry-run", "--timeout", "2.5", "-n", "1"])
 
         assert result.exit_code == 0
         assert "timeout: 2.5s" in result.output
@@ -117,10 +119,41 @@ class TestCLIPing:
         """Test ping command with environment variables."""
         runner = CliRunner()
         env = {"MDMI_MIDI_OUT": "Test Out Port", "MDMI_MIDI_IN": "Test In Port"}
-        result = runner.invoke(main, ["ping", "--dry-run"], env=env)
+        result = runner.invoke(main, ["ping", "--dry-run", "-n", "1"], env=env)
 
         assert result.exit_code == 0
-        assert "✅ Pong received!" in result.output
+        assert "1 packets transmitted, 1 received" in result.output
+
+    @patch("mdmi.commands.common.FakeMidiInterface")
+    def test_ping_with_count_sends_multiple_packets(self, mock_fake_midi):
+        mock_interface = Mock()
+        mock_interface.port_name = "Fake MIDI Interface"
+        mock_interface.wait_for_sysex.side_effect = create_pong_with_matching_id(mock_interface)
+        mock_fake_midi.return_value = mock_interface
+
+        runner = CliRunner()
+        result = runner.invoke(main, ["ping", "--dry-run", "-n", "3"])
+
+        assert result.exit_code == 0
+        assert mock_interface.send_sysex.call_count == 3
+        assert "3 packets transmitted, 3 received" in result.output
+
+    @patch("mdmi.commands.common.FakeMidiInterface")
+    def test_ping_with_packet_size_adds_padding_data(self, mock_fake_midi):
+        mock_interface = Mock()
+        mock_interface.port_name = "Fake MIDI Interface"
+        mock_interface.wait_for_sysex.side_effect = create_pong_with_matching_id(mock_interface)
+        mock_fake_midi.return_value = mock_interface
+
+        runner = CliRunner()
+        result = runner.invoke(main, ["ping", "--dry-run", "-n", "1", "--size", "8"])
+
+        assert result.exit_code == 0
+        sent_ping = mock_interface.send_sysex.call_args[0][0]
+        assert sent_ping[0:6] == bytes([0xF0, 0x00, 0x22, 0x77, 0x01, sent_ping[5]])
+        assert sent_ping[6] == 0x00
+        assert len(sent_ping) == 15
+        assert sent_ping[-1] == 0xF7
 
 
 class TestCLIPerfTest:
